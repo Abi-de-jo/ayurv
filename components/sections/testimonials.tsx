@@ -8,6 +8,7 @@ const REVIEWS = [
     name: "Kavitha R.",
     city: "Chennai, Tamil Nadu",
     product: "500g Shikakai + Free Oil Elixir",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
     comment:
       "My hair fall reduced drastically after just 3 washes! The 40+ herb powder smells so naturally herbal and authentic. The free hair oil elixir is super light and non-sticky.",
     rating: 5,
@@ -16,6 +17,7 @@ const REVIEWS = [
     name: "Ananya Sharma",
     city: "Bengaluru, Karnataka",
     product: "250g Shikakai Powder",
+    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80",
     comment:
       "I was skeptical about stopping commercial shampoo, but Ayurvya made the transition seamless. My scalp feels completely clean without feeling dry. Highly recommended!",
     rating: 5,
@@ -24,6 +26,7 @@ const REVIEWS = [
     name: "Siddharth Nair",
     city: "Kochi, Kerala",
     product: "Hair Oil Elixir + 500g Pack",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
     comment:
       "The oil is pure magic. It cured my persistent dandruff flakes in two weeks. Order delivered promptly via COD. Amazing luxury quality!",
     rating: 5,
@@ -61,10 +64,30 @@ export default function TestimonialsSection() {
               <Quote className="w-10 h-10 text-[#D4AF37]/20 absolute top-6 right-6 pointer-events-none" />
 
               <div>
-                {/* Star Rating */}
-                <div className="flex items-center gap-1 text-[#D4AF37] mb-4">
+                {/* User Header with Avatar Photo */}
+                <div className="flex items-center gap-3 mb-4">
+                  <img
+                    src={review.avatar}
+                    alt={review.name}
+                    className="w-11 h-11 rounded-full border-2 border-[#D4AF37] object-cover shadow-md shrink-0"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-serif text-sm font-bold text-[#F5F3EC]">
+                        {review.name}
+                      </span>
+                      <CheckCircle className="w-3.5 h-3.5 text-[#2FA36B]" />
+                    </div>
+                    <span className="text-[11px] text-[#8A8F8C] font-mono block">
+                      {review.city}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Rating */}
+                <div className="flex items-center gap-1 text-[#D4AF37] mb-3">
                   {[...Array(review.rating)].map((_, idx) => (
-                    <Star key={idx} className="w-4 h-4 fill-current" />
+                    <Star key={idx} className="w-3.5 h-3.5 fill-current" />
                   ))}
                 </div>
 
@@ -73,17 +96,9 @@ export default function TestimonialsSection() {
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-[#1F6E4A]/30">
-                <div className="flex items-center gap-2">
-                  <span className="font-serif text-sm font-bold text-[#F0D687]">
-                    {review.name}
-                  </span>
-                  <CheckCircle className="w-3.5 h-3.5 text-[#2FA36B]" />
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-[#8A8F8C] mt-1 font-mono">
-                  <span>{review.city}</span>
-                  <span className="text-[#D4AF37] font-semibold">{review.product}</span>
-                </div>
+              <div className="pt-3 border-t border-[#1F6E4A]/30 flex items-center justify-between text-[11px] font-mono">
+                <span className="text-[#8A8F8C]">Verified Buyer</span>
+                <span className="text-[#D4AF37] font-semibold">{review.product}</span>
               </div>
             </div>
           ))}

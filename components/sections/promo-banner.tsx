@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { getActivePromotion } from "@/db/queries";
-import { Sparkles, ArrowRight, Gift } from "lucide-react";
+import { ArrowRight, Gift, CheckCircle2 } from "lucide-react";
 
 export default async function PromoBanner() {
   const promo = await getActivePromotion();
@@ -25,7 +25,7 @@ export default async function PromoBanner() {
                   {promo.headline}
                 </span>
                 <span className="hidden sm:inline text-xs text-[#2FA36B] font-semibold flex items-center gap-1">
-                  <Sparkles className="w-3.0 h-3.0 inline" /> Live Deal
+                  <CheckCircle2 className="w-3.5 h-3.5 inline" /> Live Deal
                 </span>
               </div>
               <p className="font-serif text-sm sm:text-base text-[#F5F3EC] mt-1 font-medium tracking-wide">
@@ -36,7 +36,7 @@ export default async function PromoBanner() {
 
           <Link
             href="/checkout"
-            className="btn-gold-foil text-xs uppercase tracking-widest px-6 py-2.5 rounded-full flex items-center gap-2 shrink-0 group"
+            className="btn-gold-foil text-xs uppercase tracking-widest px-6 py-2.5 rounded-full flex items-center gap-2 shrink-0 group cursor-pointer"
           >
             <span>Claim Offer Now</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />

@@ -4,7 +4,7 @@ import { getProducts } from "@/db/queries";
 import { formatPrice } from "@/lib/utils";
 import { BotanicalDivider } from "@/components/brand/botanical-divider";
 import { ShikakaiPouchIcon, HairOilBottleIcon } from "@/components/brand/icons";
-import { ShoppingBag, ArrowRight, Gift, Sparkles, CheckCircle2, Leaf } from "lucide-react";
+import { ShoppingBag, ArrowRight, Gift, CheckCircle2, Award } from "lucide-react";
 
 export default async function ProductGrid() {
   const products = await getProducts();
@@ -19,7 +19,7 @@ export default async function ProductGrid() {
         {/* Section Header with Tight Luxury Spacing */}
         <div className="text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#101512] border border-[#D4AF37]/30 mb-3 shadow-[0_0_12px_rgba(212,175,55,0.15)]">
-            <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <Award className="w-3.5 h-3.5 text-[#D4AF37]" />
             <span className="text-[11px] font-mono font-semibold tracking-[0.2em] text-[#D4AF37] uppercase">
               Real Ayurvedic Formulations
             </span>

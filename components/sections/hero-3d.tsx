@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Hero3DBottle } from "@/components/three/product-model";
-import { Sparkles, ArrowRight, ShieldCheck, Star } from "lucide-react";
+import { ArrowRight, ShieldCheck, Star, Leaf, Compass } from "lucide-react";
 
 export default function HeroSection() {
   return (
@@ -18,7 +18,7 @@ export default function HeroSection() {
           <div className="lg:col-span-7 text-left">
             {/* Badge with tight luxury spacing */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#101512] border border-[#D4AF37]/40 shadow-[0_0_15px_rgba(212,175,55,0.15)] mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <Leaf className="w-3.5 h-3.5 text-[#D4AF37]" />
               <span className="text-xs font-mono tracking-widest text-[#F0D687] uppercase">
                 100% Authentic Ayurvedic Formulation
               </span>
@@ -69,18 +69,24 @@ export default function HeroSection() {
               </a>
             </div>
 
-            {/* Social Proof */}
+            {/* Social Proof with Real Customer Avatars */}
             <div className="pt-6 border-t border-[#1F6E4A]/30 flex items-center gap-4">
-              <div className="flex -space-x-2">
-                <div className="w-9 h-9 rounded-full bg-[#0B3D2E] border-2 border-[#D4AF37] flex items-center justify-center">
-                  <Star className="w-4 h-4 text-[#D4AF37] fill-current" />
-                </div>
-                <div className="w-9 h-9 rounded-full bg-[#1F6E4A] border-2 border-[#D4AF37] flex items-center justify-center">
-                  <Star className="w-4 h-4 text-[#F0D687] fill-current" />
-                </div>
-                <div className="w-9 h-9 rounded-full bg-[#101512] border-2 border-[#D4AF37] flex items-center justify-center">
-                  <Star className="w-4 h-4 text-[#2FA36B] fill-current" />
-                </div>
+              <div className="flex -space-x-3">
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                  alt="Customer Reviewer Kavitha"
+                  className="w-10 h-10 rounded-full border-2 border-[#D4AF37] object-cover shadow-md"
+                />
+                <img
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+                  alt="Customer Reviewer Siddharth"
+                  className="w-10 h-10 rounded-full border-2 border-[#D4AF37] object-cover shadow-md"
+                />
+                <img
+                  src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80"
+                  alt="Customer Reviewer Ananya"
+                  className="w-10 h-10 rounded-full border-2 border-[#D4AF37] object-cover shadow-md"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-1 text-[#D4AF37]">
@@ -101,7 +107,7 @@ export default function HeroSection() {
             <div className="w-full relative">
               <Hero3DBottle />
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-[#101512]/90 border border-[#D4AF37]/30 backdrop-blur-md px-4 py-1.5 rounded-full text-[11px] text-[#D4AF37] font-mono flex items-center gap-2">
-                <Sparkles className="w-3 h-3 text-[#2FA36B]" />
+                <Compass className="w-3.5 h-3.5 text-[#2FA36B]" />
                 <span>Drag to rotate 3D Elixir Bottle</span>
               </div>
             </div>
