@@ -23,6 +23,8 @@ import {
   Mail,
   Loader2,
   AlertCircle,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 
 export default function OrderForm({ products }: { products: StaticProduct[] }) {
@@ -76,7 +78,6 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
@@ -174,8 +175,8 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
                           {product.name}
                         </h4>
                         {isShikakai && (
-                          <span className="text-[9px] font-mono text-[#2FA36B] bg-[#0B3D2E] px-1.5 py-0.5 rounded border border-[#2FA36B]/30">
-                            + Free Oil
+                          <span className="text-[9px] font-mono text-[#2FA36B] bg-[#0B3D2E] px-1.5 py-0.5 rounded border border-[#2FA36B]/30 flex items-center gap-1">
+                            <Gift className="w-2.5 h-2.5 text-[#D4AF37]" /> + Free Oil
                           </span>
                         )}
                       </div>
@@ -190,7 +191,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
                     <button
                       type="button"
                       onClick={() => updateQuantity(product.id, -1)}
-                      className="w-8 h-8 rounded-full bg-[#101512] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0A0A] transition-colors"
+                      className="w-8 h-8 rounded-full bg-[#101512] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0A0A] transition-colors cursor-pointer"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
@@ -200,7 +201,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
                     <button
                       type="button"
                       onClick={() => updateQuantity(product.id, 1)}
-                      className="w-8 h-8 rounded-full bg-[#101512] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0A0A] transition-colors"
+                      className="w-8 h-8 rounded-full bg-[#101512] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0A0A] transition-colors cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -401,7 +402,10 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
             {/* Free Gift Line Item */}
             {hasShikakaiSelected && (
               <div className="flex justify-between items-center text-[#2FA36B] pt-1">
-                <span>🎁 Herbal Hair Oil Elixir (20ml) [GIFT]</span>
+                <span className="flex items-center gap-1.5">
+                  <Gift className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Herbal Hair Oil Elixir (20ml) [GIFT]</span>
+                </span>
                 <span className="font-bold">FREE (₹0)</span>
               </div>
             )}
@@ -449,7 +453,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
           <button
             type="submit"
             disabled={submitting || selectedItems.length === 0}
-            className="w-full btn-gold-foil py-4 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.3)] disabled:opacity-50"
+            className="w-full btn-gold-foil py-4 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.3)] disabled:opacity-50 cursor-pointer"
           >
             {submitting ? (
               <>
@@ -465,7 +469,9 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
           </button>
 
           <div className="text-center text-[10px] text-[#8A8F8C] space-y-1 font-mono">
-            <p>🔒 256-bit Encrypted Checkout • COD Pan-India</p>
+            <p className="flex items-center justify-center gap-1">
+              <Lock className="w-3 h-3 text-[#D4AF37]" /> 256-bit Encrypted Checkout • COD Pan-India
+            </p>
             <p>Direct Support: 8778359259 | @ayurvya.official</p>
           </div>
         </div>

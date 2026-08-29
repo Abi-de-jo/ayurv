@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { getProductBySlug, getProducts } from "@/db/queries";
 import { formatPrice } from "@/lib/utils";
 import { BotanicalDivider } from "@/components/brand/botanical-divider";
-import { ShoppingBag, ArrowLeft, Gift, ShieldCheck, Sparkles, CheckCircle2, Leaf } from "lucide-react";
+import { ShikakaiPouchIcon, HairOilBottleIcon } from "@/components/brand/icons";
+import { ShoppingBag, ArrowLeft, Gift, ShieldCheck, Sparkles, CheckCircle2, Leaf, Clock, Award } from "lucide-react";
 
 export async function generateStaticParams() {
   const products = await getProducts();
@@ -36,49 +37,30 @@ export default async function ProductDetailPage({
         {/* Back Link */}
         <Link
           href="/#products"
-          className="inline-flex items-center gap-2 text-xs font-mono text-[#8A8F8C] hover:text-[#D4AF37] transition-colors mb-8 group"
+          className="inline-flex items-center gap-2 text-xs font-mono text-[#8A8F8C] hover:text-[#D4AF37] transition-colors mb-8 group cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           <span>Back to Ayurvedic Collection</span>
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* Product Image / Graphic Container */}
+          {/* Product Image / Vector Graphic Preview Container */}
           <div className="lg:col-span-6">
-            <div className="gold-glow-card rounded-2xl p-8 sm:p-12 relative flex items-center justify-center min-h-[420px]">
-              {isShikakai ? (
-                <div className="w-52 h-72 bg-[#101512] border-2 border-[#D4AF37] rounded-xl shadow-2xl flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:16px_16px] opacity-15" />
-                  <div className="w-12 h-12 rounded-full border border-[#D4AF37] flex items-center justify-center mb-3 text-[#D4AF37] font-serif font-bold text-lg">
-                    A
-                  </div>
-                  <span className="font-serif text-sm font-bold text-[#F0D687] leading-tight">
-                    PREMIUM SHIKAKAI
-                  </span>
-                  <span className="text-xs font-mono text-[#8A8F8C] mt-1">
-                    {product.sizeLabel} Pack
-                  </span>
-                  <div className="mt-4 px-3 py-1 bg-[#0B3D2E] border border-[#2FA36B]/40 rounded text-xs text-[#2FA36B] font-mono font-semibold">
-                    40+ HERBS INCLUDED
-                  </div>
-                </div>
-              ) : (
-                <div className="w-28 h-72 bg-gradient-to-b from-[#0B3D2E] via-[#101512] to-[#0A0A0A] border-2 border-[#D4AF37] rounded-full shadow-2xl flex flex-col items-center justify-center p-4 text-center relative">
-                  <div className="w-8 h-8 rounded-full bg-[#D4AF37] text-[#0A0A0A] flex items-center justify-center text-xs font-bold mb-4">
-                    A
-                  </div>
-                  <span className="font-serif text-xs font-bold text-[#F0D687] leading-tight uppercase">
-                    HERBAL OIL ELIXIR
-                  </span>
-                  <span className="text-[10px] font-mono text-[#8A8F8C] mt-1">
-                    {product.sizeLabel}
-                  </span>
-                </div>
-              )}
+            <div className="gold-glow-card rounded-2xl p-8 sm:p-12 relative flex items-center justify-center min-h-[460px] overflow-hidden cursor-pointer">
+              {/* Radial Foil Backdrop */}
+              <div className="absolute inset-0 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:20px_20px] opacity-10" />
+
+              <div className="transform hover:scale-105 transition-transform duration-500 filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)]">
+                {isShikakai ? (
+                  <ShikakaiPouchIcon className="w-48 h-72" />
+                ) : (
+                  <HairOilBottleIcon className="w-32 h-72" />
+                )}
+              </div>
 
               {isShikakai && (
-                <div className="absolute bottom-4 left-4 right-4 bg-[#0B3D2E]/90 border border-[#D4AF37]/50 rounded-xl p-3 text-center text-xs text-[#F0D687] font-mono flex items-center justify-center gap-2">
-                  <Gift className="w-4 h-4 text-[#D4AF37] animate-bounce" />
+                <div className="absolute bottom-4 left-4 right-4 bg-[#0B3D2E]/95 border border-[#D4AF37]/60 backdrop-blur-md rounded-xl p-3.5 text-center text-xs text-[#F0D687] font-mono flex items-center justify-center gap-2 shadow-lg">
+                  <Gift className="w-4 h-4 text-[#D4AF37] animate-bounce shrink-0" />
                   <span>Free 20ml Herbal Hair Oil Elixir included at checkout!</span>
                 </div>
               )}
@@ -86,11 +68,11 @@ export default async function ProductDetailPage({
           </div>
 
           {/* Product Buying Info */}
-          <div className="lg:col-span-6 space-y-6">
+          <div className="lg:col-span-6 space-y-6 text-left">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-xs font-mono text-[#D4AF37] uppercase tracking-wider bg-[#0B3D2E]/50 px-3 py-1 rounded border border-[#D4AF37]/30">
-                  {product.sizeLabel}
+                  {product.sizeLabel} Pack
                 </span>
                 <span className="text-xs text-[#2FA36B] font-semibold flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" /> In Stock & Ready to Ship
@@ -102,52 +84,52 @@ export default async function ProductDetailPage({
               </h1>
 
               <div className="flex items-baseline gap-4 mt-3">
-                <span className="font-serif text-3xl font-bold text-[#F0D687]">
+                <span className="font-serif text-3xl font-bold text-gold-shine">
                   {formatPrice(product.price)}
                 </span>
                 <span className="text-xs text-[#8A8F8C] font-mono">
-                  Inclusive of all taxes
+                  Inclusive of all taxes & Pan-India COD
                 </span>
               </div>
             </div>
 
-            {/* Promo Callout */}
+            {/* Special Promo Callout */}
             {isShikakai && (
-              <div className="p-4 rounded-xl bg-gradient-to-r from-[#0B3D2E]/80 via-[#101512] to-[#0B3D2E]/80 border border-[#D4AF37]/40 flex items-start gap-3">
+              <div className="p-4 rounded-xl bg-gradient-to-r from-[#0B3D2E]/90 via-[#101512] to-[#0B3D2E]/90 border border-[#D4AF37]/50 flex items-start gap-3">
                 <Gift className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-xs font-mono font-bold text-[#F0D687] uppercase tracking-wider">
                     SPECIAL LIVE PROMO APPLIED
                   </h4>
                   <p className="text-xs text-[#F5F3EC]/90 mt-0.5">
-                    Order this pack and get a <strong>20ml Hair Oil Elixir FREE</strong> automatically added to your cart. Buy 2 items for <strong>FREE Shipping</strong>!
+                    Order this pack and get a <strong>20ml Hair Oil Elixir FREE</strong> automatically added to your order. Buy 2 items for <strong>FREE Shipping</strong>!
                   </p>
                 </div>
               </div>
             )}
 
-            <p className="text-sm text-[#8A8F8C] leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#8A8F8C] leading-relaxed">
               {product.description}
             </p>
 
             <BotanicalDivider className="py-2" />
 
-            {/* Ingredients & Usage Tabs */}
+            {/* Active Botanicals & Ritual Instructions */}
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#101512] border border-[#1F6E4A]/30">
+              <div className="p-4 rounded-xl bg-[#101512] border border-[#1F6E4A]/40">
                 <h4 className="font-serif text-sm font-bold text-[#F5F3EC] mb-1 flex items-center gap-2">
                   <Leaf className="w-4 h-4 text-[#2FA36B]" />
-                  Active Botanical Ingredients
+                  Active Botanical Formulation
                 </h4>
                 <p className="text-xs text-[#8A8F8C] leading-relaxed">
                   {product.ingredients}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#101512] border border-[#1F6E4A]/30">
+              <div className="p-4 rounded-xl bg-[#101512] border border-[#1F6E4A]/40">
                 <h4 className="font-serif text-sm font-bold text-[#F5F3EC] mb-1 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-                  Recommended Ritual Usage
+                  <Clock className="w-4 h-4 text-[#D4AF37]" />
+                  Recommended Ritual Application
                 </h4>
                 <p className="text-xs text-[#8A8F8C] leading-relaxed">
                   {product.usage}
@@ -155,11 +137,11 @@ export default async function ProductDetailPage({
               </div>
             </div>
 
-            {/* Direct Order Action Button */}
-            <div className="pt-4 flex flex-col sm:flex-row items-center gap-4">
+            {/* Direct Order CTA Button */}
+            <div className="pt-2">
               <Link
                 href="/checkout"
-                className="w-full btn-gold-foil py-4 rounded-full text-sm font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2"
+                className="w-full btn-gold-foil py-4 rounded-full text-xs font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_25px_rgba(212,175,55,0.3)]"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>Proceed to Order ({formatPrice(product.price)})</span>
@@ -172,7 +154,7 @@ export default async function ProductDetailPage({
                 <span>Cash on Delivery Available</span>
               </div>
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#2FA36B]" />
+                <Award className="w-4 h-4 text-[#2FA36B]" />
                 <span>100% Herbal Guarantee</span>
               </div>
             </div>

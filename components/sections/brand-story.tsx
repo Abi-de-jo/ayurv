@@ -4,7 +4,7 @@ import { Sparkles, Leaf, Award, Compass } from "lucide-react";
 
 export default function BrandStory() {
   return (
-    <section id="story" className="py-24 bg-[#080B0A] relative overflow-hidden">
+    <section id="story" className="py-20 bg-[#080B0A] relative overflow-hidden">
       {/* Background Foil Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(#1F6E4A_1px,transparent_1px)] [background-size:32px_32px] opacity-10 pointer-events-none" />
 
@@ -12,7 +12,7 @@ export default function BrandStory() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left Visual Container */}
           <div className="lg:col-span-5 relative">
-            <div className="gold-glow-card rounded-2xl p-8 text-center relative z-10 overflow-hidden">
+            <div className="gold-glow-card rounded-2xl p-8 text-center relative z-10 overflow-hidden cursor-pointer">
               <div className="w-20 h-20 rounded-full bg-[#0B3D2E] border-2 border-[#D4AF37] mx-auto flex items-center justify-center text-[#D4AF37] mb-6 shadow-[0_0_20px_rgba(212,175,55,0.3)]">
                 <Leaf className="w-10 h-10" />
               </div>
@@ -39,17 +39,20 @@ export default function BrandStory() {
           </div>
 
           {/* Right Editorial Copy */}
-          <div className="lg:col-span-7 space-y-6 text-left">
-            <span className="text-xs font-mono font-semibold tracking-[0.25em] text-[#D4AF37] uppercase bg-[#101512] px-4 py-1 rounded-full border border-[#D4AF37]/30">
-              The Ayurvya Heritage
-            </span>
-            <h2 className="font-serif text-3xl sm:text-5xl font-semibold text-[#F5F3EC] leading-tight">
+          <div className="lg:col-span-7 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#101512] border border-[#D4AF37]/30 mb-3 shadow-[0_0_12px_rgba(212,175,55,0.15)]">
+              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span className="text-[11px] font-mono font-semibold tracking-[0.2em] text-[#D4AF37] uppercase">
+                The Ayurvya Heritage
+              </span>
+            </div>
+            <h2 className="font-serif text-3xl sm:text-5xl font-semibold text-[#F5F3EC] leading-tight mb-4">
               Ancient Vedic Wisdom Bottled for <span className="text-gold-foil">Modern Royalty</span>
             </h2>
-            <p className="text-sm sm:text-base text-[#8A8F8C] leading-relaxed">
+            <p className="text-sm sm:text-base text-[#8A8F8C] leading-relaxed mb-4">
               For generations, true Ayurvedic hair remedies depended on wild-harvested herbs crushed by mortar and pestle and cooked gently over slow firewood flames. Commercial shampoos replaced these sacred remedies with harsh detergent sulphates, synthetic fragrances, and watery diluents.
             </p>
-            <p className="text-sm sm:text-base text-[#8A8F8C] leading-relaxed">
+            <p className="text-sm sm:text-base text-[#8A8F8C] leading-relaxed mb-6">
               At <strong className="text-[#F5F3EC]">Ayurvya Wellness</strong>, we rejected synthetic short-cuts. We source 40+ authentic herbs—including organic Shikakai, wild Amla, Bhringraj, Brahmi, and fresh Hibiscus—and formulate them in small batches to preserve every drop of essential oil and root vitality.
             </p>
 

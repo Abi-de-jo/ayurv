@@ -15,9 +15,9 @@ export default function HeroSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left Text & Brand Narrative */}
-          <div className="lg:col-span-7 space-y-6 text-left">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#101512] border border-[#D4AF37]/40 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+          <div className="lg:col-span-7 text-left">
+            {/* Badge with tight luxury spacing */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#101512] border border-[#D4AF37]/40 shadow-[0_0_15px_rgba(212,175,55,0.15)] mb-3">
               <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
               <span className="text-xs font-mono tracking-widest text-[#F0D687] uppercase">
                 100% Authentic Ayurvedic Formulation
@@ -25,19 +25,19 @@ export default function HeroSection() {
             </div>
 
             {/* Main Headline */}
-            <h1 className="font-serif text-4xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-[#F5F3EC] leading-[1.1]">
+            <h1 className="font-serif text-4xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-[#F5F3EC] leading-[1.1] mb-4">
               Where <span className="text-gold-shine italic">Ayurveda</span> Meets{" "}
               <span className="text-gold-foil">Luxury</span>
             </h1>
 
             {/* Subtext */}
-            <p className="text-sm sm:text-lg text-[#8A8F8C] max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base text-[#8A8F8C] max-w-2xl leading-relaxed mb-6">
               Experience the restorative power of <strong className="text-[#F5F3EC]">40+ potent bio-active herbs</strong>, 
               crafted without sulphates, parabens, or synthetic chemicals. Nourish scalp deep tissue, stop hair thinning, and achieve mirror-gloss shine.
             </p>
 
             {/* Key Value Bullets */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
               <div className="flex items-center gap-2 text-xs text-[#F5F3EC]/90">
                 <ShieldCheck className="w-4 h-4 text-[#D4AF37] shrink-0" />
                 <span>40+ Ancient Herbs</span>
@@ -53,17 +53,17 @@ export default function HeroSection() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-4">
+            <div className="flex flex-wrap items-center gap-4 mb-8">
               <Link
                 href="/checkout"
-                className="btn-gold-foil px-8 py-4 rounded-full text-sm font-bold uppercase tracking-widest flex items-center gap-3 group"
+                className="btn-gold-foil px-8 py-4 rounded-full text-sm font-bold uppercase tracking-widest flex items-center gap-3 group cursor-pointer"
               >
                 <span>Shop Catalog Now</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <a
                 href="#ingredients"
-                className="px-8 py-4 rounded-full text-sm font-semibold uppercase tracking-wider text-[#F5F3EC] bg-[#101512] border border-[#1F6E4A] hover:border-[#D4AF37] hover:bg-[#0B3D2E]/40 transition-all"
+                className="px-8 py-4 rounded-full text-sm font-semibold uppercase tracking-wider text-[#F5F3EC] bg-[#101512] border border-[#1F6E4A] hover:border-[#D4AF37] hover:bg-[#0B3D2E]/40 transition-all cursor-pointer"
               >
                 Explore 40+ Herbs
               </a>
@@ -72,14 +72,14 @@ export default function HeroSection() {
             {/* Social Proof */}
             <div className="pt-6 border-t border-[#1F6E4A]/30 flex items-center gap-4">
               <div className="flex -space-x-2">
-                <div className="w-9 h-9 rounded-full bg-[#0B3D2E] border-2 border-[#D4AF37] flex items-center justify-center text-xs text-[#D4AF37] font-bold">
-                  ★
+                <div className="w-9 h-9 rounded-full bg-[#0B3D2E] border-2 border-[#D4AF37] flex items-center justify-center">
+                  <Star className="w-4 h-4 text-[#D4AF37] fill-current" />
                 </div>
-                <div className="w-9 h-9 rounded-full bg-[#1F6E4A] border-2 border-[#D4AF37] flex items-center justify-center text-xs text-[#F0D687] font-bold">
-                  ★
+                <div className="w-9 h-9 rounded-full bg-[#1F6E4A] border-2 border-[#D4AF37] flex items-center justify-center">
+                  <Star className="w-4 h-4 text-[#F0D687] fill-current" />
                 </div>
-                <div className="w-9 h-9 rounded-full bg-[#101512] border-2 border-[#D4AF37] flex items-center justify-center text-xs text-[#2FA36B] font-bold">
-                  ★
+                <div className="w-9 h-9 rounded-full bg-[#101512] border-2 border-[#D4AF37] flex items-center justify-center">
+                  <Star className="w-4 h-4 text-[#2FA36B] fill-current" />
                 </div>
               </div>
               <div>

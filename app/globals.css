@@ -27,6 +27,18 @@
     selection-background-color: #d4af37;
     selection-color: #0a0a0a;
   }
+
+  /* Force pointer cursor on all interactive elements */
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select,
+  [role="button"] {
+    cursor: pointer !important;
+  }
 }
 
 /* Custom Gold Foil Typography & Micro-Interactions */
@@ -57,16 +69,13 @@
   }
 }
 
-.border-gold-gradient {
-  border-image: linear-gradient(135deg, #d4af37, #1f6e4a, #f0d687) 1;
-}
-
 .gold-glow-card {
   background: rgba(16, 21, 18, 0.85);
   border: 1px solid rgba(212, 175, 55, 0.25);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   backdrop-filter: blur(12px);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
 
 .gold-glow-card:hover {
@@ -82,6 +91,7 @@
   letter-spacing: 0.05em;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  cursor: pointer !important;
 }
 
 .btn-gold-foil:hover {

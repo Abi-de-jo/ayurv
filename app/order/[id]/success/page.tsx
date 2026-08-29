@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { getOrderById } from "@/db/queries";
 import { formatPrice } from "@/lib/utils";
 import { BotanicalDivider } from "@/components/brand/botanical-divider";
-import { CheckCircle2, Gift, Phone, MapPin, PackageCheck, MessageCircle, ArrowRight } from "lucide-react";
+import { WhatsAppIcon } from "@/components/brand/icons";
+import { CheckCircle2, Gift, Phone, MapPin, PackageCheck, ArrowRight } from "lucide-react";
 
 export default async function OrderSuccessPage({
   params,
@@ -30,7 +31,7 @@ export default async function OrderSuccessPage({
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-[#0B3D2E]/30 blur-3xl pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="gold-glow-card rounded-2xl p-8 sm:p-12 text-center space-y-8">
+        <div className="gold-glow-card rounded-2xl p-8 sm:p-12 text-center space-y-8 cursor-pointer">
           {/* Checkmark Icon */}
           <div className="w-20 h-20 rounded-full bg-[#0B3D2E] border-2 border-[#D4AF37] mx-auto flex items-center justify-center text-[#D4AF37] shadow-[0_0_30px_rgba(212,175,55,0.4)] animate-in zoom-in-50">
             <CheckCircle2 className="w-10 h-10" />
@@ -101,7 +102,7 @@ export default async function OrderSuccessPage({
                           </span>
                           {isGift && (
                             <span className="text-[9px] font-mono text-[#2FA36B] bg-[#0B3D2E] px-1.5 py-0.5 rounded border border-[#2FA36B]/40 flex items-center gap-1">
-                              <Gift className="w-3 h-3" /> FREE GIFT
+                              <Gift className="w-3 h-3 text-[#D4AF37]" /> FREE GIFT
                             </span>
                           )}
                         </div>
@@ -143,23 +144,24 @@ export default async function OrderSuccessPage({
               href={`https://wa.me/918778359259?text=${whatsappMessage}`}
               target="_blank"
               rel="noreferrer"
-              className="w-full sm:w-1/2 py-3.5 px-6 rounded-full text-xs font-bold uppercase tracking-wider bg-[#25D366] text-[#0A0A0A] flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-lg"
+              className="w-full sm:w-1/2 py-3.5 px-6 rounded-full text-xs font-bold uppercase tracking-wider bg-[#25D366] text-[#0A0A0A] flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-lg cursor-pointer"
             >
-              <MessageCircle className="w-4 h-4 fill-current" />
+              <WhatsAppIcon className="w-4 h-4 fill-current" />
               <span>Confirm on WhatsApp</span>
             </a>
 
             <Link
               href="/"
-              className="w-full sm:w-1/2 btn-gold-foil py-3.5 px-6 rounded-full text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+              className="w-full sm:w-1/2 btn-gold-foil py-3.5 px-6 rounded-full text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Return to Store</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="text-xs text-[#8A8F8C] font-mono pt-2">
-            Questions about your order? Call our helpline: <strong className="text-[#D4AF37]">8778359259</strong>
+          <div className="text-xs text-[#8A8F8C] font-mono pt-2 flex items-center justify-center gap-2">
+            <Phone className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>Questions about your order? Call helpline: <strong className="text-[#D4AF37]">8778359259</strong></span>
           </div>
         </div>
       </div>
