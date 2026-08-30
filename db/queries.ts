@@ -1,5 +1,5 @@
 import { db, schema } from "./index";
-import { sql, eq, desc } from "drizzle-orm";
+import { sql, eq, desc, and } from "drizzle-orm";
 import { CheckoutFormValues } from "@/lib/validations/order";
 
 let columnsEnsured = false;
@@ -12,6 +12,16 @@ async function ensureDbColumns() {
     await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes text;`);
     await db.execute(sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS code text DEFAULT 'AYURV10';`);
     await db.execute(sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS discount_percent integer DEFAULT 10;`);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS promo_redemptions (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        customer_id uuid NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        order_id uuid NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+        promo_code text NOT NULL,
+        discount_amount numeric(10, 2) NOT NULL DEFAULT '0.00',
+        created_at timestamp NOT NULL DEFAULT now()
+      );
+    `);
     columnsEnsured = true;
   } catch (e) {
     // DDL migration catch
@@ -332,6 +342,17 @@ export async function processOrderCreation(
           isFreeGift: String(item.isFreeGift),
         });
       }
+
+      // Record promo redemption in structured promo_redemptions table
+      if (formValues.appliedPromoCode) {
+        await db.insert(schema.promoRedemptions).values({
+          id: crypto.randomUUID(),
+          customerId: customerId,
+          orderId: orderId,
+          promoCode: formValues.appliedPromoCode.trim().toUpperCase(),
+          discountAmount: promoDiscount.toFixed(2),
+        });
+      }
     } catch (e) {
       console.warn("Neon DB Order Creation Error:", e);
     }
@@ -639,12 +660,27 @@ export async function checkPromoUsedByCustomer(customerKey: string, promoCode: s
   if (db) {
     await ensureDbColumns();
     try {
+      const codeUpper = promoCode.trim().toUpperCase();
+
+      // 1. Query dedicated promo_redemptions table directly in Neon DB
+      const redemptions = await db
+        .select()
+        .from(schema.promoRedemptions)
+        .where(
+          and(
+            eq(schema.promoRedemptions.customerId, customerKey),
+            eq(schema.promoRedemptions.promoCode, codeUpper)
+          )
+        );
+
+      if (redemptions.length > 0) return true;
+
+      // 2. Secondary check on orders adminNotes column
       const custOrders = await db
         .select()
         .from(schema.orders)
         .where(eq(schema.orders.customerId, customerKey));
 
-      const codeUpper = promoCode.trim().toUpperCase();
       const usedInDb = custOrders.some((order) => {
         const notes = order.adminNotes ? order.adminNotes.toUpperCase() : "";
         return notes.includes(codeUpper);

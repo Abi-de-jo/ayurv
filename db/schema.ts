@@ -73,9 +73,19 @@ export const promotions = pgTable("promotions", {
   endsAt: timestamp("ends_at"),
 });
 
+export const promoRedemptions = pgTable("promo_redemptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  customerId: uuid("customer_id").references(() => customers.id).notNull(),
+  orderId: uuid("order_id").references(() => orders.id).notNull(),
+  promoCode: text("promo_code").notNull(),
+  discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type Product = typeof products.$inferSelect;
 export type Customer = typeof customers.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type Promotion = typeof promotions.$inferSelect;
+export type PromoRedemption = typeof promoRedemptions.$inferSelect;
 
