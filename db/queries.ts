@@ -214,6 +214,14 @@ export async function processOrderCreation(
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(existingCustomerId || "");
   const customerId = isUuid ? existingCustomerId! : crypto.randomUUID();
 
+  // DB-level enforcement: Check if this unique customer has already claimed this promo code in Neon DB
+  if (formValues.appliedPromoCode && customerId) {
+    const isAlreadyUsed = await checkPromoUsedByCustomer(customerId, formValues.appliedPromoCode);
+    if (isAlreadyUsed) {
+      throw new Error(`Promo code '${formValues.appliedPromoCode}' has already been claimed on a previous order by your account.`);
+    }
+  }
+
   const newOrderSummary = {
     id: orderId,
     trackingCode: trackingCode,
@@ -645,4 +653,38 @@ export async function updatePromotionAdmin(promoData: {
     }
   }
   return { success: true };
+}
+
+export async function checkPromoUsedByCustomer(customerKey: string, promoCode: string): Promise<boolean> {
+  if (!customerKey || !promoCode) return false;
+
+  if (db) {
+    await ensureDbColumns();
+    try {
+      const custOrders = await db
+        .select()
+        .from(schema.orders)
+        .where(eq(schema.orders.customerId, customerKey));
+
+      const codeUpper = promoCode.trim().toUpperCase();
+      const usedInDb = custOrders.some((order) => {
+        const notes = order.adminNotes ? order.adminNotes.toUpperCase() : "";
+        return notes.includes(codeUpper);
+      });
+
+      if (usedInDb) return true;
+    } catch (e) {
+      console.warn("Neon DB checkPromoUsedByCustomer Error:", e);
+    }
+  }
+
+  const codeUpper = promoCode.trim().toUpperCase();
+  for (const ord of inMemoryOrders.values()) {
+    if (ord.customer?.id === customerKey) {
+      const notes = ord.adminNotes ? ord.adminNotes.toUpperCase() : "";
+      if (notes.includes(codeUpper)) return true;
+    }
+  }
+
+  return false;
 }

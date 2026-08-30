@@ -13,11 +13,21 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
 
   const fetchLivePromo = async () => {
     try {
-      const res = await fetch("/api/promotion");
+      const customerKey = typeof window !== "undefined" ? localStorage.getItem("ayurvya_customer_id") || "" : "";
+      const res = await fetch(`/api/promotion?customerKey=${encodeURIComponent(customerKey)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.promo) {
           setCurrentPromo(data.promo);
+        }
+        if (data.alreadyUsed) {
+          setIsAlreadyClaimed(true);
+        } else {
+          const promoCode = data.promo?.code || "AYURV10";
+          const usedPromos: string[] = JSON.parse(localStorage.getItem("ayurvya_used_promos") || "[]");
+          if (usedPromos.includes(promoCode)) {
+            setIsAlreadyClaimed(true);
+          }
         }
       }
     } catch (e) {
@@ -30,14 +40,6 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
     const timer = setInterval(fetchLivePromo, 5000);
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    const promoCode = currentPromo?.code || "AYURV10";
-    const usedPromos: string[] = JSON.parse(localStorage.getItem("ayurvya_used_promos") || "[]");
-    if (usedPromos.includes(promoCode)) {
-      setIsAlreadyClaimed(true);
-    }
-  }, [currentPromo?.code]);
 
   if (currentPromo && currentPromo.active === "false") return null;
 
