@@ -50,28 +50,85 @@ export default async function OrderSuccessPage({
           </div>
 
           {/* Order Meta Box */}
-          <div className="p-4 rounded-xl bg-[#101512] border border-[#D4AF37]/30 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+          <div className="p-5 rounded-2xl bg-[#101512] border-2 border-[#D4AF37]/40 flex flex-wrap items-center justify-between gap-4 text-xs font-sans shadow-lg">
             <div>
-              <span className="text-[#8A8F8C] block">Order ID:</span>
-              <span className="text-[#F0D687] font-bold text-sm">#{order.id}</span>
+              <span className="text-[#8A8F8C] block text-[11px]">Unique Tracking Code:</span>
+              <span className="text-[#F0D687] font-bold font-mono text-base tracking-wider bg-[#0B3D2E] px-2.5 py-0.5 rounded border border-[#D4AF37]/40">
+                {order.trackingCode || order.id.slice(0, 8).toUpperCase()}
+              </span>
             </div>
             <div>
-              <span className="text-[#8A8F8C] block">Payment Method:</span>
-              <span className="text-[#2FA36B] font-semibold uppercase">
+              <span className="text-[#8A8F8C] block text-[11px]">Payment Method:</span>
+              <span className="text-[#2FA36B] font-bold uppercase text-xs">
                 {order.paymentMethod === "cod" ? "Cash on Delivery (COD)" : "Prepaid"}
               </span>
             </div>
             <div>
-              <span className="text-[#8A8F8C] block">Total Amount:</span>
-              <span className="text-gold-shine font-bold text-base">
+              <span className="text-[#8A8F8C] block text-[11px]">Total Amount:</span>
+              <span className="text-gold-shine font-bold text-lg">
                 {formatPrice(order.totalAmount)}
               </span>
             </div>
           </div>
 
-          <BotanicalDivider className="py-2" />
+            <BotanicalDivider className="py-2" />
 
-          {/* Itemized Breakdown */}
+          {/* Live Order Dispatch Progress Tracker Bar */}
+          <div className="p-6 rounded-2xl bg-[#101512] border border-[#1F6E4A]/40 text-left space-y-4 shadow-md">
+            <div className="flex items-center justify-between border-b border-[#1F6E4A]/30 pb-3">
+              <h3 className="font-serif text-base font-bold text-[#F5F3EC] flex items-center gap-2">
+                <PackageCheck className="w-5 h-5 text-[#D4AF37]" />
+                <span>Live Parcel Dispatch Status</span>
+              </h3>
+              <span className="text-xs font-sans font-bold text-[#2FA36B] bg-[#0B3D2E] px-3 py-0.5 rounded-full border border-[#2FA36B]/40 uppercase tracking-wider">
+                {order.status.replace(/_/g, " ")}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-5 gap-2 relative pt-2">
+              <div className="text-center space-y-1.5">
+                <div className="w-9 h-9 rounded-full bg-[#0B3D2E] border-2 border-[#2FA36B] text-[#2FA36B] mx-auto flex items-center justify-center shadow-lg">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <p className="text-[11px] font-sans font-bold text-[#F5F3EC]">Confirmed</p>
+                <p className="text-[9px] font-sans text-[#8A8F8C] hidden sm:block">Order Received</p>
+              </div>
+
+              <div className="text-center space-y-1.5">
+                <div className="w-9 h-9 rounded-full bg-[#0A0A0A] border border-[#D4AF37]/40 text-[#D4AF37] mx-auto flex items-center justify-center">
+                  <PackageCheck className="w-4 h-4" />
+                </div>
+                <p className="text-[11px] font-sans font-bold text-[#8A8F8C]">Packing</p>
+                <p className="text-[9px] font-sans text-[#8A8F8C]/60 hidden sm:block">Herbal Preparation</p>
+              </div>
+
+              <div className="text-center space-y-1.5">
+                <div className="w-9 h-9 rounded-full bg-[#0A0A0A] border border-[#1F6E4A]/30 text-[#8A8F8C] mx-auto flex items-center justify-center">
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+                <p className="text-[11px] font-sans font-bold text-[#8A8F8C]">Dispatched</p>
+                <p className="text-[9px] font-sans text-[#8A8F8C]/60 hidden sm:block">With Courier</p>
+              </div>
+
+              <div className="text-center space-y-1.5">
+                <div className="w-9 h-9 rounded-full bg-[#0A0A0A] border border-[#1F6E4A]/30 text-[#8A8F8C] mx-auto flex items-center justify-center">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <p className="text-[11px] font-sans font-bold text-[#8A8F8C]">Nearby</p>
+                <p className="text-[9px] font-sans text-[#8A8F8C]/60 hidden sm:block">Out for Delivery</p>
+              </div>
+
+              <div className="text-center space-y-1.5">
+                <div className="w-9 h-9 rounded-full bg-[#0A0A0A] border border-[#1F6E4A]/30 text-[#8A8F8C] mx-auto flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <p className="text-[11px] font-sans font-bold text-[#8A8F8C]">Delivered</p>
+                <p className="text-[9px] font-sans text-[#8A8F8C]/60 hidden sm:block">Package Delivered</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Itemized Breakdown with Real Product Photography Avatars */}
           <div className="text-left space-y-4">
             <h3 className="font-serif text-lg font-bold text-[#F5F3EC] flex items-center gap-2 border-b border-[#1F6E4A]/30 pb-3">
               <PackageCheck className="w-5 h-5 text-[#D4AF37]" />
@@ -81,38 +138,49 @@ export default async function OrderSuccessPage({
             <div className="space-y-3">
               {order.items.map((item: any, idx: number) => {
                 const isGift = item.isFreeGift === "true";
+                const isShikakai = item.productName.toLowerCase().includes("shikakai");
 
                 return (
                   <div
                     key={idx}
-                    className={`p-4 rounded-xl border flex items-center justify-between ${
+                    className={`p-4 rounded-2xl border flex items-center justify-between gap-4 ${
                       isGift
-                        ? "bg-[#0B3D2E]/40 border-[#2FA36B]"
-                        : "bg-[#101512] border-[#1F6E4A]/30"
+                        ? "bg-[#0B3D2E]/30 border-[#2FA36B]/60 shadow-md"
+                        : "bg-[#101512] border-[#1F6E4A]/40"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#0A0A0A] border border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] font-bold text-xs">
-                        {item.sizeLabel || "Item"}
+                    <div className="flex items-center gap-3.5">
+                      {/* Realistic Product Image Avatar */}
+                      <div className="w-14 h-14 rounded-xl bg-[#0A0A0A] border border-[#D4AF37]/40 overflow-hidden shrink-0 shadow-md relative">
+                        <img
+                          src={isShikakai ? "/product-shikakai.png" : "/product-oil.png"}
+                          alt={item.productName}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
+
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-serif text-sm font-bold text-[#F5F3EC]">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-sans text-sm font-bold text-[#F5F3EC]">
                             {item.productName}
                           </span>
                           {isGift && (
-                            <span className="text-[9px] font-mono text-[#2FA36B] bg-[#0B3D2E] px-1.5 py-0.5 rounded border border-[#2FA36B]/40 flex items-center gap-1">
+                            <span className="text-[10px] font-sans font-bold text-[#2FA36B] bg-[#0B3D2E] px-2 py-0.5 rounded-full border border-[#2FA36B]/40 flex items-center gap-1">
                               <Gift className="w-3 h-3 text-[#D4AF37]" /> FREE GIFT
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-[#8A8F8C] font-mono">
-                          Qty: {item.quantity}
-                        </span>
+
+                        <div className="flex items-center gap-3 mt-1 text-xs font-sans text-[#8A8F8C]">
+                          <span className="bg-[#0A0A0A] px-2 py-0.5 rounded border border-[#1F6E4A]/30 text-[#D4AF37] font-semibold text-[11px]">
+                            {item.sizeLabel || "Standard Pack"}
+                          </span>
+                          <span>Qty: {item.quantity}</span>
+                        </div>
                       </div>
                     </div>
 
-                    <span className="font-mono text-sm font-bold text-[#F0D687]">
+                    <span className="font-sans text-sm sm:text-base font-bold text-[#F0D687] shrink-0">
                       {isGift ? "FREE (₹0)" : formatPrice(parseFloat(item.unitPrice) * item.quantity)}
                     </span>
                   </div>
@@ -127,39 +195,46 @@ export default async function OrderSuccessPage({
               <MapPin className="w-5 h-5 text-[#D4AF37]" />
               Shipping Destination
             </h3>
-            <div className="p-4 rounded-xl bg-[#101512] border border-[#1F6E4A]/30 text-xs text-[#8A8F8C] space-y-1">
+            <div className="p-4 rounded-2xl bg-[#101512] border border-[#1F6E4A]/30 text-xs text-[#8A8F8C] space-y-1 font-sans">
               <p className="font-semibold text-[#F5F3EC] text-sm">{order.customer.name}</p>
               <p>{order.customer.addressLine1}</p>
               {order.customer.addressLine2 && <p>{order.customer.addressLine2}</p>}
               <p>
                 {order.customer.city}, {order.customer.state} - {order.customer.pincode}
               </p>
-              <p className="text-[#D4AF37] font-mono pt-1">Phone: {order.customer.phone}</p>
+              <p className="text-[#D4AF37] font-semibold pt-1">Phone: {order.customer.phone}</p>
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center gap-4">
+          <div className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Link
+              href="/track"
+              className="w-full btn-gold-foil py-3.5 px-4 rounded-full text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+            >
+              <span>Track Live Parcel</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+
             <a
               href={`https://wa.me/918778359259?text=${whatsappMessage}`}
               target="_blank"
               rel="noreferrer"
-              className="w-full sm:w-1/2 py-3.5 px-6 rounded-full text-xs font-bold uppercase tracking-wider bg-[#25D366] text-[#0A0A0A] flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-lg cursor-pointer"
+              className="w-full py-3.5 px-4 rounded-full text-xs font-bold uppercase tracking-wider bg-[#25D366] text-[#0A0A0A] flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-lg cursor-pointer font-sans"
             >
               <WhatsAppIcon className="w-4 h-4 fill-current" />
-              <span>Confirm on WhatsApp</span>
+              <span>Confirm WhatsApp</span>
             </a>
 
             <Link
               href="/"
-              className="w-full sm:w-1/2 btn-gold-foil py-3.5 px-6 rounded-full text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-[#101512] border border-[#D4AF37]/50 py-3.5 px-4 rounded-full text-xs font-bold uppercase tracking-wider text-[#F5F3EC] hover:bg-[#0B3D2E] transition-colors flex items-center justify-center gap-2 cursor-pointer font-sans"
             >
               <span>Return to Store</span>
-              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="text-xs text-[#8A8F8C] font-mono pt-2 flex items-center justify-center gap-2">
+          <div className="text-xs text-[#8A8F8C] font-sans pt-2 flex items-center justify-center gap-2">
             <Phone className="w-3.5 h-3.5 text-[#D4AF37]" />
             <span>Questions about your order? Call helpline: <strong className="text-[#D4AF37]">8778359259</strong></span>
           </div>

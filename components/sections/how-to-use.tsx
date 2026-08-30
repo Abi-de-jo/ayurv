@@ -1,6 +1,6 @@
 import React from "react";
 import { BotanicalDivider } from "@/components/brand/botanical-divider";
-import { Droplet, Sparkles, ShowerHead, Compass } from "lucide-react";
+import { Droplet, Flower2, ShowerHead, Compass } from "lucide-react";
 
 export default function HowToUseSection() {
   return (
@@ -47,7 +47,7 @@ export default function HowToUseSection() {
               02
             </div>
             <div className="w-14 h-14 rounded-2xl bg-[#101512] border border-[#2FA36B]/40 mx-auto flex items-center justify-center text-[#2FA36B]">
-              <Sparkles className="w-7 h-7" />
+              <Flower2 className="w-7 h-7" />
             </div>
             <h3 className="font-serif text-xl font-bold text-[#F5F3EC]">
               Mix Herbal Shikakai Paste
@@ -77,3 +77,4 @@ export default function HowToUseSection() {
     </section>
   );
 }
+

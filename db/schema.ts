@@ -1,6 +1,15 @@
 import { pgTable, uuid, text, integer, numeric, timestamp, pgEnum } from "drizzle-orm/pg-core";
 
-export const orderStatusEnum = pgEnum("order_status", ["pending", "confirmed", "shipped", "delivered", "cancelled"]);
+export const orderStatusEnum = pgEnum("order_status", [
+  "pending",
+  "confirmed",
+  "processing",
+  "shipped",
+  "out_for_delivery",
+  "delivered",
+  "cancelled",
+  "rejected",
+]);
 export const paymentMethodEnum = pgEnum("payment_method", ["cod", "prepaid"]);
 
 export const products = pgTable("products", {
@@ -32,11 +41,15 @@ export const customers = pgTable("customers", {
 
 export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().defaultRandom(),
+  trackingCode: text("tracking_code").notNull().unique(),
   customerId: uuid("customer_id").references(() => customers.id).notNull(),
   totalAmount: numeric("total_amount", { precision: 10, scale: 2 }).notNull(),
   shippingFee: numeric("shipping_fee", { precision: 10, scale: 2 }).notNull().default("0.00"),
   paymentMethod: paymentMethodEnum("payment_method").notNull().default("cod"),
   status: orderStatusEnum("status").notNull().default("pending"),
+  courierName: text("courier_name"),
+  trackingNumber: text("tracking_number"),
+  adminNotes: text("admin_notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -53,6 +66,8 @@ export const promotions = pgTable("promotions", {
   id: uuid("id").primaryKey().defaultRandom(),
   headline: text("headline").notNull(),
   description: text("description").notNull(),
+  code: text("code").default("AYURV10"),
+  discountPercent: integer("discount_percent").default(10),
   active: text("active").notNull().default("true"),
   startsAt: timestamp("starts_at"),
   endsAt: timestamp("ends_at"),
@@ -63,3 +78,4 @@ export type Customer = typeof customers.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type Promotion = typeof promotions.$inferSelect;
+

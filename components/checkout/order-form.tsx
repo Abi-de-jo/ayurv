@@ -24,7 +24,6 @@ import {
   Loader2,
   AlertCircle,
   Lock,
-  Sparkles,
 } from "lucide-react";
 
 export default function OrderForm({ products }: { products: StaticProduct[] }) {
@@ -112,6 +111,10 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
     try {
       const res = await createOrder(submissionPayload);
       if (res.success && res.orderId) {
+        if (res.trackingCode) {
+          localStorage.setItem("ayurvya_last_order_code", res.trackingCode);
+          localStorage.setItem("ayurvya_last_order_id", res.orderId);
+        }
         // Trigger celebration confetti
         confetti({
           particleCount: 80,
@@ -166,7 +169,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-[#0B3D2E] border border-[#D4AF37]/30 flex items-center justify-center font-serif text-[#D4AF37] font-bold text-xs shrink-0">
+                    <div className="w-12 h-12 rounded-lg bg-[#0B3D2E] border border-[#D4AF37]/30 flex items-center justify-center font-sans text-[#D4AF37] font-bold text-xs shrink-0">
                       {product.sizeLabel}
                     </div>
                     <div>
@@ -175,12 +178,12 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
                           {product.name}
                         </h4>
                         {isShikakai && (
-                          <span className="text-[9px] font-mono text-[#2FA36B] bg-[#0B3D2E] px-1.5 py-0.5 rounded border border-[#2FA36B]/30 flex items-center gap-1">
+                          <span className="text-[9px] font-sans font-semibold text-[#2FA36B] bg-[#0B3D2E] px-1.5 py-0.5 rounded border border-[#2FA36B]/30 flex items-center gap-1">
                             <Gift className="w-2.5 h-2.5 text-[#D4AF37]" /> + Free Oil
                           </span>
                         )}
                       </div>
-                      <span className="font-serif text-xs font-semibold text-[#F0D687]">
+                      <span className="font-sans text-xs font-bold text-[#F0D687]">
                         {formatPrice(product.price)}
                       </span>
                     </div>
@@ -416,8 +419,8 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
             </div>
 
             <div className="flex justify-between items-baseline pt-4 border-t border-[#D4AF37]/30 text-sm">
-              <span className="font-serif font-bold text-[#F5F3EC]">Total Amount:</span>
-              <span className="font-serif text-2xl font-bold text-gold-shine">
+              <span className="font-sans font-semibold text-[#F5F3EC]">Total Amount:</span>
+              <span className="font-sans text-2xl font-bold text-[#F0D687]">
                 {formatPrice(grandTotal)}
               </span>
             </div>

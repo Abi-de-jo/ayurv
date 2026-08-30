@@ -1,6 +1,6 @@
 import React from "react";
 import { BotanicalDivider } from "@/components/brand/botanical-divider";
-import { Sparkles, Flower2, Shield, HeartPulse, Sun, Droplets, Leaf } from "lucide-react";
+import { Sprout, Flower2, Shield, HeartPulse, Sun, Droplets, Leaf } from "lucide-react";
 
 const HERBS = [
   {
@@ -14,7 +14,7 @@ const HERBS = [
     name: "Bhringraj (King of Hair)",
     role: "Follicle Activator",
     benefit: "Revives dormant hair roots, thickens hair shaft, and stops excessive hair shedding.",
-    icon: Sparkles,
+    icon: Sprout,
     color: "#2FA36B",
   },
   {
@@ -108,7 +108,7 @@ export default function IngredientsSection() {
         {/* 40+ Herbs Banner */}
         <div className="mt-10 p-6 rounded-2xl bg-gradient-to-r from-[#101512] via-[#0B3D2E]/50 to-[#101512] border border-[#D4AF37]/30 text-center">
           <div className="inline-flex items-center gap-2 mb-1">
-            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+            <Leaf className="w-4 h-4 text-[#D4AF37]" />
             <span className="text-xs font-mono font-bold text-[#F0D687] uppercase tracking-widest">
               34 Additional Heritage Botanicals Included
             </span>
@@ -121,3 +121,4 @@ export default function IngredientsSection() {
     </section>
   );
 }
+

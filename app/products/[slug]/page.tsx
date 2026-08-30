@@ -5,7 +5,7 @@ import { getProductBySlug, getProducts } from "@/db/queries";
 import { formatPrice } from "@/lib/utils";
 import { BotanicalDivider } from "@/components/brand/botanical-divider";
 import { ShikakaiPouchIcon, HairOilBottleIcon } from "@/components/brand/icons";
-import { ShoppingBag, ArrowLeft, Gift, ShieldCheck, Sparkles, CheckCircle2, Leaf, Clock, Award } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Gift, ShieldCheck, CheckCircle2, Leaf, Clock, Award } from "lucide-react";
 
 export async function generateStaticParams() {
   const products = await getProducts();
@@ -44,26 +44,14 @@ export default async function ProductDetailPage({
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* Product Image / Vector Graphic Preview Container */}
+          {/* Product Photography Container */}
           <div className="lg:col-span-6">
-            <div className="gold-glow-card rounded-2xl p-8 sm:p-12 relative flex items-center justify-center min-h-[460px] overflow-hidden cursor-pointer">
-              {/* Radial Foil Backdrop */}
-              <div className="absolute inset-0 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:20px_20px] opacity-10" />
-
-              <div className="transform hover:scale-105 transition-transform duration-500 filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)]">
-                {isShikakai ? (
-                  <ShikakaiPouchIcon className="w-48 h-72" />
-                ) : (
-                  <HairOilBottleIcon className="w-32 h-72" />
-                )}
-              </div>
-
-              {isShikakai && (
-                <div className="absolute bottom-4 left-4 right-4 bg-[#0B3D2E]/95 border border-[#D4AF37]/60 backdrop-blur-md rounded-xl p-3.5 text-center text-xs text-[#F0D687] font-mono flex items-center justify-center gap-2 shadow-lg">
-                  <Gift className="w-4 h-4 text-[#D4AF37] animate-bounce shrink-0" />
-                  <span>Free 20ml Herbal Hair Oil Elixir included at checkout!</span>
-                </div>
-              )}
+            <div className="gold-glow-card rounded-2xl p-3 sm:p-4 relative flex items-center justify-center min-h-[460px] overflow-hidden cursor-pointer">
+              <img
+                src={isShikakai ? "/product-shikakai.png" : "/product-oil.png"}
+                alt={product.name}
+                className="w-full h-[460px] object-cover rounded-xl hover:scale-105 transition-transform duration-700"
+              />
             </div>
           </div>
 
@@ -71,7 +59,7 @@ export default async function ProductDetailPage({
           <div className="lg:col-span-6 space-y-6 text-left">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-xs font-mono text-[#D4AF37] uppercase tracking-wider bg-[#0B3D2E]/50 px-3 py-1 rounded border border-[#D4AF37]/30">
+                <span className="text-xs font-sans font-semibold text-[#D4AF37] uppercase tracking-wider bg-[#0B3D2E]/50 px-3 py-1 rounded border border-[#D4AF37]/30">
                   {product.sizeLabel} Pack
                 </span>
                 <span className="text-xs text-[#2FA36B] font-semibold flex items-center gap-1">
@@ -84,10 +72,10 @@ export default async function ProductDetailPage({
               </h1>
 
               <div className="flex items-baseline gap-4 mt-3">
-                <span className="font-serif text-3xl font-bold text-gold-shine">
+                <span className="font-sans text-3xl font-bold text-[#F0D687]">
                   {formatPrice(product.price)}
                 </span>
-                <span className="text-xs text-[#8A8F8C] font-mono">
+                <span className="text-xs text-[#8A8F8C] font-sans font-normal">
                   Inclusive of all taxes & Pan-India COD
                 </span>
               </div>

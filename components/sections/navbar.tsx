@@ -2,82 +2,96 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { AyurvyaLogo } from "@/components/brand/logo";
 import { InstagramIcon } from "@/components/brand/icons";
-import { ShoppingBag, Phone, Menu, X } from "lucide-react";
+import { ShoppingBag, Phone, Menu, X, ChevronRight } from "lucide-react";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("home");
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
+
+      const sections = ["products", "story", "ingredients", "benefits"];
+      const scrollPos = window.scrollY + 200;
+
+      let current = "home";
+      for (const section of sections) {
+        const el = document.getElementById(section);
+        if (el && el.offsetTop <= scrollPos) {
+          current = section;
+        }
+      }
+      setActiveSection(current);
     };
-    window.addEventListener("scroll", handleScroll);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const navLinks = [
+    { name: "Home", href: "/", id: "home" },
+    { name: "Products", href: "/#products", id: "products" },
+    { name: "Heritage", href: "/#story", id: "story" },
+    { name: "Benefits", href: "/#benefits", id: "benefits" },
+    { name: "Track Order", href: "/track", id: "track" },
+  ];
+
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-[#0A0A0A]/95 backdrop-blur-xl border-b border-[#D4AF37]/30 py-3.5 shadow-[0_4px_30px_rgba(0,0,0,0.9)]"
-          : "bg-gradient-to-b from-[#0A0A0A]/90 to-transparent py-5"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-3 sm:pt-4 px-3 sm:px-6 pointer-events-none transition-all duration-300">
+      {/* Borderless Expanded Floating Notch Container */}
+      <motion.div
+        layout
+        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+        className={`pointer-events-auto w-full max-w-7xl relative bg-[#0A0A0A]/85 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] transition-all duration-300 ${
+          mobileMenuOpen
+            ? "rounded-[28px] p-4 sm:p-5"
+            : scrolled
+            ? "rounded-full px-6 sm:px-8 py-3 shadow-[0_16px_50px_rgba(0,0,0,0.9)]"
+            : "rounded-full px-6 sm:px-8 py-3.5"
+        }`}
+      >
+        {/* iPhone Dynamic Island Camera Pill Accent */}
+        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-12 h-1 bg-[#101512] rounded-full opacity-40 hidden md:block" />
+
+        {/* Bar Content */}
         <div className="flex items-center justify-between gap-6">
           {/* Logo */}
-          <Link href="/" className="group cursor-pointer shrink-0">
-            <AyurvyaLogo className="h-10 sm:h-12" />
+          <Link
+            href="/"
+            onClick={() => setMobileMenuOpen(false)}
+            className="group cursor-pointer shrink-0 flex items-center gap-2"
+          >
+            <AyurvyaLogo className="h-8 sm:h-9 transition-transform duration-300 group-hover:scale-105" />
           </Link>
 
-          {/* Desktop Clean Luxury Navigation Links - No icons, Single Line */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide text-[#F5F3EC]/90">
-            <Link
-              href="/"
-              className="hover:text-[#D4AF37] transition-colors py-1 whitespace-nowrap relative group cursor-pointer"
-            >
-              <span>Home</span>
-              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#D4AF37] group-hover:w-full transition-all duration-300" />
-            </Link>
+          {/* Clean Navigation List - No separate backgrounds */}
+          <ul className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => {
+              const isActive = activeSection === link.id;
+              return (
+                <li key={link.id}>
+                  <Link
+                    href={link.href}
+                    className={`text-xs font-semibold uppercase tracking-widest transition-colors duration-200 cursor-pointer ${
+                      isActive
+                        ? "text-[#D4AF37]"
+                        : "text-[#F5F3EC]/80 hover:text-[#D4AF37]"
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
 
-            <Link
-              href="/#products"
-              className="hover:text-[#D4AF37] transition-colors py-1 whitespace-nowrap relative group cursor-pointer"
-            >
-              <span>Products</span>
-              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#D4AF37] group-hover:w-full transition-all duration-300" />
-            </Link>
-
-            <Link
-              href="/#story"
-              className="hover:text-[#D4AF37] transition-colors py-1 whitespace-nowrap relative group cursor-pointer"
-            >
-              <span>Heritage</span>
-              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#D4AF37] group-hover:w-full transition-all duration-300" />
-            </Link>
-
-            <Link
-              href="/#ingredients"
-              className="hover:text-[#D4AF37] transition-colors py-1 whitespace-nowrap relative group cursor-pointer"
-            >
-              <span>40+ Herbs</span>
-              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#D4AF37] group-hover:w-full transition-all duration-300" />
-            </Link>
-
-            <Link
-              href="/#benefits"
-              className="hover:text-[#D4AF37] transition-colors py-1 whitespace-nowrap relative group cursor-pointer"
-            >
-              <span>Benefits</span>
-              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#D4AF37] group-hover:w-full transition-all duration-300" />
-            </Link>
-          </nav>
-
-          {/* Contact Helpline & CTA Button */}
-          <div className="hidden lg:flex items-center gap-6 shrink-0">
+          {/* Desktop Right Helpline & CTA Button */}
+          <div className="hidden md:flex items-center gap-6 shrink-0">
             <a
               href="tel:8778359259"
               className="flex items-center gap-2 text-xs text-[#8A8F8C] hover:text-[#D4AF37] transition-colors font-mono cursor-pointer"
@@ -98,88 +112,96 @@ export default function Navbar() {
 
             <Link
               href="/checkout"
-              className="btn-gold-foil px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-md"
+              className="btn-gold-foil px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all duration-200"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>Order Now</span>
             </Link>
           </div>
 
-          {/* Mobile Navigation Toggle */}
-          <div className="flex md:hidden items-center gap-3">
-            <Link
-              href="/checkout"
-              className="btn-gold-foil p-2 rounded-full text-xs flex items-center cursor-pointer"
-            >
-              <ShoppingBag className="w-4 h-4" />
-            </Link>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-[#D4AF37] focus:outline-none cursor-pointer"
-              aria-label="Toggle Menu"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0A0A0A]/98 border-b border-[#D4AF37]/30 px-6 py-6 space-y-4 text-center">
-          <Link
-            href="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm uppercase tracking-wider text-[#F5F3EC] hover:text-[#D4AF37] cursor-pointer py-1"
-          >
-            Home
-          </Link>
-          <Link
-            href="/#products"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm uppercase tracking-wider text-[#F5F3EC] hover:text-[#D4AF37] cursor-pointer py-1"
-          >
-            Products
-          </Link>
-          <Link
-            href="/#story"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm uppercase tracking-wider text-[#F5F3EC] hover:text-[#D4AF37] cursor-pointer py-1"
-          >
-            Heritage
-          </Link>
-          <Link
-            href="/#ingredients"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm uppercase tracking-wider text-[#F5F3EC] hover:text-[#D4AF37] cursor-pointer py-1"
-          >
-            40+ Herbs
-          </Link>
-          <Link
-            href="/#benefits"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm uppercase tracking-wider text-[#F5F3EC] hover:text-[#D4AF37] cursor-pointer py-1"
-          >
-            Benefits
-          </Link>
-          <div className="pt-4 border-t border-[#1F6E4A]/30 flex flex-col items-center gap-3">
-            <a
-              href="tel:8778359259"
-              className="flex items-center gap-2 text-xs text-[#8A8F8C] font-mono cursor-pointer"
-            >
-              <Phone className="w-4 h-4 text-[#D4AF37]" />
-              Call: 8778359259
-            </a>
+          {/* Mobile Actions & Menu Toggle */}
+          <div className="flex md:hidden items-center gap-2">
             <Link
               href="/checkout"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full btn-gold-foil py-3 rounded-full text-xs uppercase tracking-widest text-center cursor-pointer"
+              className="btn-gold-foil p-2 rounded-full text-xs flex items-center cursor-pointer shadow-md active:scale-95 transition-transform"
+              aria-label="Order Now"
             >
-              Order Now
+              <ShoppingBag className="w-4 h-4" />
             </Link>
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-[#F5F3EC]/80 hover:text-[#D4AF37] focus:outline-none cursor-pointer active:scale-95 transition-colors"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5 text-[#D4AF37]" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
-      )}
+
+        {/* Dynamic Island Expanded Menu (Mobile) */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="md:hidden pt-4 mt-3 flex flex-col gap-3"
+            >
+              <ul className="space-y-1">
+                {navLinks.map((link) => (
+                  <li key={link.id}>
+                    <Link
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-between text-sm uppercase font-medium tracking-wider text-[#F5F3EC] hover:text-[#D4AF37] px-4 py-2.5 transition-colors cursor-pointer"
+                    >
+                      <span>{link.name}</span>
+                      <ChevronRight className="w-4 h-4 text-[#D4AF37]" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="pt-3 flex flex-col gap-3">
+                <div className="flex items-center justify-between px-2">
+                  <a
+                    href="tel:8778359259"
+                    className="flex items-center gap-2 text-xs text-[#8A8F8C] hover:text-[#D4AF37] font-mono cursor-pointer transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    <span>8778359259</span>
+                  </a>
+
+                  <a
+                    href="https://instagram.com/ayurvya.official"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 text-xs text-[#8A8F8C] hover:text-[#D4AF37] cursor-pointer transition-colors"
+                  >
+                    <InstagramIcon className="w-4 h-4 text-[#D4AF37]" />
+                    <span>Instagram</span>
+                  </a>
+                </div>
+
+                <Link
+                  href="/checkout"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full btn-gold-foil py-3 rounded-full text-xs font-bold uppercase tracking-widest text-center flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Order Now</span>
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </header>
   );
 }
+
+
+

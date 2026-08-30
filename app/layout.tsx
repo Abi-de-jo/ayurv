@@ -4,6 +4,7 @@ import "./globals.css";
 import LenisProvider from "@/components/providers/lenis-provider";
 import Navbar from "@/components/sections/navbar";
 import Footer from "@/components/sections/footer";
+import ActiveOrderWidget from "@/components/layout/active-order-widget";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({
         <LenisProvider>
           <Navbar />
           <main className="min-h-screen">{children}</main>
+          <ActiveOrderWidget />
           <Footer />
         </LenisProvider>
       </body>

@@ -1,6 +1,15 @@
 import { db, schema } from "./index";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { CheckoutFormValues } from "@/lib/validations/order";
+import {
+  saveOrderPersistent,
+  getOrderPersistent,
+  getAllOrdersPersistent,
+  updateOrderStatusPersistent,
+  deleteOrderPersistent,
+  getPromotionPersistent,
+  savePromotionPersistent,
+} from "./storage";
 
 export interface StaticProduct {
   id: string;
@@ -28,7 +37,7 @@ export const INITIAL_PRODUCTS: StaticProduct[] = [
       "Shikakai, Amla, Reetha, Bhringraj, Brahmi, Hibiscus Petals, Neem Leaf, Tulsi, Fenugreek, Nagarmotha, Curry Leaves, Rose Petals, Jatamansi, Aloe Vera, Kapoor Kachli, Vettiver, and 25+ secret heritage herbs.",
     usage:
       "Mix 2–3 tablespoons with warm water or buttermilk to form a paste. Apply thoroughly to wet scalp & hair. Massage gently for 3-5 minutes, then rinse completely. Use 2-3 times weekly.",
-    image: "/images/shikakai-500g.png",
+    image: "/product-shikakai.png",
     stock: 150,
   },
   {
@@ -43,14 +52,14 @@ export const INITIAL_PRODUCTS: StaticProduct[] = [
       "Shikakai, Amla, Reetha, Bhringraj, Brahmi, Hibiscus Petals, Neem Leaf, Tulsi, Fenugreek, Nagarmotha, Curry Leaves, Rose Petals, Jatamansi, Aloe Vera, Kapoor Kachli, Vettiver, and 25+ secret heritage herbs.",
     usage:
       "Mix 1–2 tablespoons with warm water. Apply onto damp hair and scalp, massage gently, and rinse thoroughly.",
-    image: "/images/shikakai-250g.png",
+    image: "/product-shikakai.png",
     stock: 200,
   },
   {
     id: "c3d4e5f6-a7b8-49c0-1234-567890abcdef",
     slug: "hair-oil-elixir",
     name: "Herbal Hair Oil Elixir",
-    sizeLabel: "~20ml",
+    sizeLabel: "250ml",
     price: "499.00",
     description:
       "Concentrated restorative oil elixir crafted with 40+ potent bio-active herbs cooked over 21 days in virgin cold-pressed sesame and coconut oils. Nourishes deep scalp layers, prevents premature graying, adds mirror shine, and tames frizz.",
@@ -58,7 +67,7 @@ export const INITIAL_PRODUCTS: StaticProduct[] = [
       "Cold-pressed Virgin Coconut Oil, Sesame Seed Oil, Bhringraj, Amla, Brahmi, Hibiscus Flower Extract, Vetiver Root, Gunja, Lodhra, Jatamansi, Camphor, Rosemary Essential Oil, Vitamin E.",
     usage:
       "Dispense 5-8 drops directly onto scalp using dropper. Massage gently in circular motions before bedtime or 1 hour prior to washing with Ayurvya Shikakai Powder.",
-    image: "/images/hair-oil-elixir.png",
+    image: "/product-oil.png",
     stock: 300,
   },
 ];
@@ -68,11 +77,26 @@ export const INITIAL_PROMOTION = {
   headline: "EXCLUSIVE HERBAL OFFER",
   description:
     "Buy any 500g or 250g Shikakai pack, get a 20ml Herbal Hair Oil Elixir FREE · Buy any 2 products for FREE Shipping!",
+  code: "AYURV10",
+  discountPercent: 10,
   active: "true",
 };
 
-// In-memory fallback order storage for dev environment without Neon connection
+// Global in-memory storage for dev mode persistence
 const inMemoryOrders = new Map<string, any>();
+const inMemoryProducts = new Map<string, StaticProduct>(
+  INITIAL_PRODUCTS.map((p) => [p.id, { ...p }])
+);
+let inMemoryPromotion = { ...INITIAL_PROMOTION };
+
+function generateTrackingCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let randomStr = "";
+  for (let i = 0; i < 6; i++) {
+    randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `AYUR-${randomStr}`;
+}
 
 export async function getProducts(): Promise<StaticProduct[]> {
   if (db) {
@@ -88,15 +112,15 @@ export async function getProducts(): Promise<StaticProduct[]> {
           description: p.description || "",
           ingredients: p.ingredients || "",
           usage: p.usage || "",
-          image: p.image || "/images/placeholder.png",
+          image: p.image || "/product-shikakai.png",
           stock: p.stock ?? 100,
         }));
       }
     } catch (e) {
-      console.warn("Neon DB query failed, using static product fallback:", e);
+      console.warn("Neon DB query failed, using stored products fallback:", e);
     }
   }
-  return INITIAL_PRODUCTS;
+  return Array.from(inMemoryProducts.values());
 }
 
 export async function getProductBySlug(slug: string): Promise<StaticProduct | null> {
@@ -115,16 +139,15 @@ export async function getActivePromotion() {
         return activePromos[0];
       }
     } catch (e) {
-      console.warn("Neon DB query failed, using static promo fallback:", e);
+      console.warn("Neon DB query failed, using stored promo fallback:", e);
     }
   }
-  return INITIAL_PROMOTION;
+  return getPromotionPersistent();
 }
 
 export async function processOrderCreation(formValues: CheckoutFormValues) {
   const allProducts = await getProducts();
 
-  // Map requested items to exact DB product records
   const itemDetails: Array<{
     product: StaticProduct;
     quantity: number;
@@ -158,10 +181,8 @@ export async function processOrderCreation(formValues: CheckoutFormValues) {
     });
   }
 
-  // Server-Side Promo Logic: Automatically add free 20ml Herbal Hair Oil Elixir if eligible
   const hairOilProduct = allProducts.find((p) => p.slug === "hair-oil-elixir");
 
-  // Check if free oil is already included in the paid items list or needs gift addition
   if (qualifiesForFreeOil && hairOilProduct) {
     itemDetails.push({
       product: hairOilProduct,
@@ -171,10 +192,8 @@ export async function processOrderCreation(formValues: CheckoutFormValues) {
     });
   }
 
-  // Free shipping if 2 or more paid items purchased
   const shippingFee = totalPaidItemCount >= 2 ? 0 : 50;
 
-  // Calculate strict server-side total
   const itemsTotal = itemDetails.reduce((acc, item) => {
     return acc + parseFloat(item.unitPrice) * item.quantity;
   }, 0);
@@ -182,10 +201,12 @@ export async function processOrderCreation(formValues: CheckoutFormValues) {
   const grandTotal = itemsTotal + shippingFee;
 
   const orderId = crypto.randomUUID();
+  const trackingCode = generateTrackingCode();
   const customerId = crypto.randomUUID();
 
   const newOrderSummary = {
     id: orderId,
+    trackingCode: trackingCode,
     customer: {
       id: customerId,
       name: formValues.name,
@@ -201,6 +222,9 @@ export async function processOrderCreation(formValues: CheckoutFormValues) {
     shippingFee: shippingFee.toFixed(2),
     paymentMethod: formValues.paymentMethod,
     status: "confirmed",
+    courierName: null,
+    trackingNumber: null,
+    adminNotes: null,
     createdAt: new Date().toISOString(),
     items: itemDetails.map((item) => ({
       id: crypto.randomUUID(),
@@ -212,10 +236,28 @@ export async function processOrderCreation(formValues: CheckoutFormValues) {
     })),
   };
 
-  // Attempt Neon database transaction if connection exists
   if (db) {
     try {
       await db.transaction(async (tx) => {
+        // Ensure products exist in DB first so foreign key constraints on orderItems succeed
+        const dbProds = await tx.select().from(schema.products);
+        if (dbProds.length === 0) {
+          for (const p of INITIAL_PRODUCTS) {
+            await tx.insert(schema.products).values({
+              id: p.id,
+              slug: p.slug,
+              name: p.name,
+              sizeLabel: p.sizeLabel,
+              price: p.price,
+              description: p.description,
+              ingredients: p.ingredients,
+              usage: p.usage,
+              image: p.image,
+              stock: p.stock,
+            });
+          }
+        }
+
         await tx.insert(schema.customers).values({
           id: customerId,
           name: formValues.name,
@@ -230,6 +272,7 @@ export async function processOrderCreation(formValues: CheckoutFormValues) {
 
         await tx.insert(schema.orders).values({
           id: orderId,
+          trackingCode: trackingCode,
           customerId: customerId,
           totalAmount: grandTotal.toFixed(2),
           shippingFee: shippingFee.toFixed(2),
@@ -248,19 +291,50 @@ export async function processOrderCreation(formValues: CheckoutFormValues) {
         }
       });
     } catch (e) {
-      console.warn("Neon DB order write error, storing in memory fallback:", e);
+      console.warn("Neon DB order write error, saving to persistent store:", e);
     }
   }
 
-  // Save to memory store for instant retrieval on order success screen
   inMemoryOrders.set(orderId, newOrderSummary);
+  inMemoryOrders.set(trackingCode, newOrderSummary);
+  saveOrderPersistent(newOrderSummary);
 
   return newOrderSummary;
 }
 
-export async function getOrderById(orderId: string) {
-  if (inMemoryOrders.has(orderId)) {
-    return inMemoryOrders.get(orderId);
+export async function getOrderById(orderIdOrCode?: string) {
+  const persistentOrder = getOrderPersistent(orderIdOrCode);
+  if (persistentOrder) {
+    return persistentOrder;
+  }
+
+  const allInMemory = Array.from(new Set(inMemoryOrders.values()));
+
+  if (!orderIdOrCode || orderIdOrCode.trim() === "" || orderIdOrCode === "latest") {
+    if (allInMemory.length > 0) {
+      return allInMemory[allInMemory.length - 1];
+    }
+  }
+
+  if (!orderIdOrCode) return null;
+
+  const raw = orderIdOrCode.trim();
+  const cleaned = raw.replace(/[\s\-_]/g, "").toUpperCase();
+
+  // Check inMemoryOrders fuzzy match
+  for (const val of allInMemory) {
+    const cleanId = (val.id || "").replace(/[\s\-_]/g, "").toUpperCase();
+    const cleanCode = (val.trackingCode || "").replace(/[\s\-_]/g, "").toUpperCase();
+    if (
+      val.id === raw ||
+      val.trackingCode === raw ||
+      cleanId === cleaned ||
+      cleanCode === cleaned ||
+      cleanId.includes(cleaned) ||
+      cleanCode.includes(cleaned)
+    ) {
+      return val;
+    }
   }
 
   if (db) {
@@ -268,7 +342,8 @@ export async function getOrderById(orderId: string) {
       const orderRecord = await db
         .select()
         .from(schema.orders)
-        .where(eq(schema.orders.id, orderId));
+        .where(eq(schema.orders.id, raw));
+
       if (orderRecord.length > 0) {
         const order = orderRecord[0];
         const customerRecord = await db
@@ -289,15 +364,19 @@ export async function getOrderById(orderId: string) {
             schema.products,
             eq(schema.orderItems.productId, schema.products.id)
           )
-          .where(eq(schema.orderItems.orderId, orderId));
+          .where(eq(schema.orderItems.orderId, order.id));
 
         return {
           id: order.id,
+          trackingCode: order.trackingCode,
           customer: customerRecord[0],
           totalAmount: order.totalAmount,
           shippingFee: order.shippingFee,
           paymentMethod: order.paymentMethod,
           status: order.status,
+          courierName: order.courierName || null,
+          trackingNumber: order.trackingNumber || null,
+          adminNotes: order.adminNotes || null,
           createdAt: order.createdAt.toISOString(),
           items: itemsRecords,
         };
@@ -308,4 +387,193 @@ export async function getOrderById(orderId: string) {
   }
 
   return null;
+}
+
+export async function getAllOrdersAdmin() {
+  const mergedOrdersMap = new Map<string, any>();
+
+  // Add all persistent orders first
+  for (const order of getAllOrdersPersistent()) {
+    if (order && order.id) {
+      mergedOrdersMap.set(order.id, order);
+    }
+  }
+
+  // Add in-memory orders
+  for (const order of inMemoryOrders.values()) {
+    if (order && order.id) {
+      mergedOrdersMap.set(order.id, order);
+    }
+  }
+
+  if (db) {
+    try {
+      const dbOrders = await db.select().from(schema.orders).orderBy(desc(schema.orders.createdAt));
+      for (const order of dbOrders) {
+        const customerRecord = await db
+          .select()
+          .from(schema.customers)
+          .where(eq(schema.customers.id, order.customerId));
+        const itemsRecords = await db
+          .select({
+            id: schema.orderItems.id,
+            quantity: schema.orderItems.quantity,
+            unitPrice: schema.orderItems.unitPrice,
+            isFreeGift: schema.orderItems.isFreeGift,
+            productName: schema.products.name,
+            sizeLabel: schema.products.sizeLabel,
+          })
+          .from(schema.orderItems)
+          .innerJoin(
+            schema.products,
+            eq(schema.orderItems.productId, schema.products.id)
+          )
+          .where(eq(schema.orderItems.orderId, order.id));
+
+        const dbOrderObj = {
+          id: order.id,
+          trackingCode: order.trackingCode,
+          customer: customerRecord[0] || { name: "Customer", phone: "" },
+          totalAmount: order.totalAmount,
+          shippingFee: order.shippingFee,
+          paymentMethod: order.paymentMethod,
+          status: order.status,
+          courierName: order.courierName || null,
+          trackingNumber: order.trackingNumber || null,
+          adminNotes: order.adminNotes || null,
+          createdAt: order.createdAt.toISOString(),
+          items: itemsRecords,
+        };
+
+        mergedOrdersMap.set(order.id, dbOrderObj);
+      }
+    } catch (e) {
+      console.warn("Neon DB getAllOrdersAdmin failed:", e);
+    }
+  }
+
+  return Array.from(mergedOrdersMap.values());
+}
+
+export async function updateOrderStatusAdmin(
+  orderId: string,
+  newStatus: string,
+  courierName?: string,
+  trackingNumber?: string,
+  adminNotes?: string
+) {
+  // Update persistent file storage first
+  updateOrderStatusPersistent(orderId, newStatus, courierName, trackingNumber, adminNotes);
+
+  // Update in-memory store
+  for (const [key, val] of inMemoryOrders.entries()) {
+    if (val.id === orderId) {
+      val.status = newStatus;
+      if (courierName !== undefined) val.courierName = courierName;
+      if (trackingNumber !== undefined) val.trackingNumber = trackingNumber;
+      if (adminNotes !== undefined) val.adminNotes = adminNotes;
+    }
+  }
+
+  if (db) {
+    try {
+      await db
+        .update(schema.orders)
+        .set({
+          status: newStatus as any,
+          courierName: courierName || null,
+          trackingNumber: trackingNumber || null,
+          adminNotes: adminNotes || null,
+        })
+        .where(eq(schema.orders.id, orderId));
+    } catch (e) {
+      console.warn("Neon DB updateOrderStatusAdmin failed:", e);
+    }
+  }
+
+  return { success: true };
+}
+
+export async function deleteOrderAdmin(orderId: string) {
+  deleteOrderPersistent(orderId);
+
+  for (const [key, val] of inMemoryOrders.entries()) {
+    if (val.id === orderId) {
+      inMemoryOrders.delete(key);
+    }
+  }
+
+  if (db) {
+    try {
+      await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, orderId));
+      await db.delete(schema.orders).where(eq(schema.orders.id, orderId));
+    } catch (e) {
+      console.warn("Neon DB deleteOrderAdmin failed:", e);
+    }
+  }
+
+  return { success: true };
+}
+
+export async function updateProductAdmin(productId: string, updatedData: Partial<StaticProduct>) {
+  if (inMemoryProducts.has(productId)) {
+    const existing = inMemoryProducts.get(productId)!;
+    inMemoryProducts.set(productId, { ...existing, ...updatedData });
+  }
+
+  if (db) {
+    try {
+      await db
+        .update(schema.products)
+        .set({
+          name: updatedData.name,
+          price: updatedData.price,
+          sizeLabel: updatedData.sizeLabel,
+          description: updatedData.description,
+          stock: updatedData.stock,
+        })
+        .where(eq(schema.products.id, productId));
+    } catch (e) {
+      console.warn("Neon DB updateProductAdmin failed:", e);
+    }
+  }
+
+  return { success: true };
+}
+
+export async function updatePromotionAdmin(promoData: {
+  headline: string;
+  description: string;
+  code?: string;
+  discountPercent?: number;
+  active: string;
+}) {
+  savePromotionPersistent(promoData);
+
+  inMemoryPromotion = {
+    ...inMemoryPromotion,
+    ...promoData,
+  };
+
+  if (db) {
+    try {
+      const existing = await db.select().from(schema.promotions);
+      if (existing.length > 0) {
+        await db
+          .update(schema.promotions)
+          .set({
+            headline: promoData.headline,
+            description: promoData.description,
+            code: promoData.code || "AYURV10",
+            discountPercent: promoData.discountPercent ?? 10,
+            active: promoData.active,
+          })
+          .where(eq(schema.promotions.id, existing[0].id));
+      }
+    } catch (e) {
+      console.warn("Neon DB updatePromotionAdmin failed:", e);
+    }
+  }
+
+  return { success: true };
 }

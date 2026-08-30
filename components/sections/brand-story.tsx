@@ -1,6 +1,6 @@
 import React from "react";
 import { BotanicalDivider } from "@/components/brand/botanical-divider";
-import { Sparkles, Leaf, Award, Compass } from "lucide-react";
+import { Leaf, Award, Compass } from "lucide-react";
 
 export default function BrandStory() {
   return (
@@ -41,7 +41,7 @@ export default function BrandStory() {
           {/* Right Editorial Copy */}
           <div className="lg:col-span-7 text-left">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#101512] border border-[#D4AF37]/30 mb-3 shadow-[0_0_12px_rgba(212,175,55,0.15)]">
-              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <Award className="w-3.5 h-3.5 text-[#D4AF37]" />
               <span className="text-[11px] font-mono font-semibold tracking-[0.2em] text-[#D4AF37] uppercase">
                 The Ayurvya Heritage
               </span>
@@ -93,3 +93,4 @@ export default function BrandStory() {
     </section>
   );
 }
+
