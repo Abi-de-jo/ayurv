@@ -81,7 +81,13 @@ export default function AdminDashboardPage() {
     setLoadingOrders(true);
     const ordersRes = await getAdminOrdersAction();
     if (ordersRes.success && ordersRes.orders) {
-      setOrders(ordersRes.orders);
+      const uniqueMap = new Map<string, any>();
+      for (const o of ordersRes.orders) {
+        if (o && o.id) {
+          uniqueMap.set(o.id, o);
+        }
+      }
+      setOrders(Array.from(uniqueMap.values()));
     }
 
     const prodRes = await getAdminProductsAction();
@@ -367,9 +373,9 @@ export default function AdminDashboardPage() {
             ) : viewMode === "card" ? (
               /* CARD VIEW LAYOUT */
               <div className="space-y-4">
-                {filteredOrders.map((order) => (
+                {filteredOrders.map((order, idx) => (
                   <div
-                    key={order.id}
+                    key={`${order.id}-${idx}`}
                     className="gold-glow-card rounded-2xl p-6 border border-[#1F6E4A]/40 space-y-4 relative"
                   >
                     {/* Top Row: Tracking Code, Status Pill & Delete Button */}
@@ -554,8 +560,8 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1F6E4A]/20">
-                    {filteredOrders.map((order) => (
-                      <tr key={order.id} className="hover:bg-[#0B3D2E]/20 transition-colors">
+                    {filteredOrders.map((order, idx) => (
+                      <tr key={`${order.id}-${idx}`} className="hover:bg-[#0B3D2E]/20 transition-colors">
                         <td className="p-4 font-mono font-bold text-[#F0D687]">
                           {order.trackingCode || order.id.slice(0, 8).toUpperCase()}
                           <span className="block text-[10px] font-sans text-[#8A8F8C] font-normal">
