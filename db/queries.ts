@@ -572,6 +572,15 @@ export async function updatePromotionAdmin(promoData: {
             active: promoData.active,
           })
           .where(eq(schema.promotions.id, existing[0].id));
+      } else {
+        await db.insert(schema.promotions).values({
+          id: crypto.randomUUID(),
+          headline: promoData.headline,
+          description: promoData.description,
+          code: promoData.code || "AYURV10",
+          discountPercent: promoData.discountPercent ?? 10,
+          active: promoData.active,
+        });
       }
     } catch (e) {
       console.warn("Neon DB updatePromotionAdmin failed:", e);

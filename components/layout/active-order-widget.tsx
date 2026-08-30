@@ -5,33 +5,41 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { WhatsAppIcon } from "@/components/brand/icons";
 import { formatPrice } from "@/lib/utils";
+import { getOrCreateCustomerKey } from "@/lib/customer";
 import {
   PackageCheck,
   Truck,
-  CheckCircle2,
   X,
   ArrowRight,
   Gift,
-  MapPin,
   ChevronUp,
+  Package,
 } from "lucide-react";
 
 export default function ActiveOrderWidget() {
-  const [order, setOrder] = useState<any | null>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [selectedOrderIndex, setSelectedOrderIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchActiveOrder = async () => {
+      const customerKey = getOrCreateCustomerKey();
       const code = localStorage.getItem("ayurvya_last_order_code");
       const id = localStorage.getItem("ayurvya_last_order_id");
 
       const param = code || id || "";
       try {
-        const res = await fetch(`/api/track-order?code=${encodeURIComponent(param)}`);
+        const res = await fetch(
+          `/api/track-order?code=${encodeURIComponent(param)}&customerKey=${encodeURIComponent(
+            customerKey
+          )}`
+        );
         if (res.ok) {
           const data = await res.json();
-          if (data.order) {
-            setOrder(data.order);
+          if (data.orders && data.orders.length > 0) {
+            setOrders(data.orders);
+          } else if (data.order) {
+            setOrders([data.order]);
           }
         }
       } catch (e) {
@@ -46,11 +54,12 @@ export default function ActiveOrderWidget() {
     return () => clearInterval(timer);
   }, []);
 
-  if (!order) return null;
+  if (orders.length === 0) return null;
 
+  const order = orders[selectedOrderIndex] || orders[orders.length - 1];
   const trackingCode = order.trackingCode || order.id.slice(0, 8).toUpperCase();
   const whatsappMessage = encodeURIComponent(
-    `Hello Ayurvya Team, I want to track my active order #${trackingCode} for ${formatPrice(
+    `Hello Ayurvya Team, I want to track my order #${trackingCode} for ${formatPrice(
       order.totalAmount
     )}. Current status: ${order.status}`
   );
@@ -70,7 +79,7 @@ export default function ActiveOrderWidget() {
           <div className="w-6 h-6 rounded-full bg-[#0B3D2E] border border-[#2FA36B] flex items-center justify-center text-[#2FA36B]">
             <Truck className="w-3.5 h-3.5" />
           </div>
-          <span>My Order:</span>
+          <span>My Orders ({orders.length}):</span>
           <span className="text-[#F0D687] font-mono">{trackingCode}</span>
           <span className="bg-[#0B3D2E] text-[#2FA36B] text-[10px] uppercase px-2 py-0.5 rounded-full border border-[#2FA36B]/40 font-semibold">
             {order.status.replace(/_/g, " ")}
@@ -101,10 +110,10 @@ export default function ActiveOrderWidget() {
               <div className="flex items-center justify-between border-b border-[#1F6E4A]/30 pb-3">
                 <div>
                   <span className="text-[10px] font-mono font-bold text-[#D4AF37] uppercase bg-[#0A0A0A] px-2.5 py-0.5 rounded border border-[#D4AF37]/40">
-                    Order Tracking #{trackingCode}
+                    Tracking Code: {trackingCode}
                   </span>
                   <h3 className="font-serif text-lg font-bold text-[#F5F3EC] mt-1">
-                    Your Active Ayurvya Ritual Pack
+                    Your Active Ayurvya Orders
                   </h3>
                 </div>
 
@@ -116,12 +125,32 @@ export default function ActiveOrderWidget() {
                 </button>
               </div>
 
+              {/* Multi-Order Tabs Selector (If customer placed > 1 order) */}
+              {orders.length > 1 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  {orders.map((ord, idx) => (
+                    <button
+                      key={ord.id}
+                      onClick={() => setSelectedOrderIndex(idx)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                        selectedOrderIndex === idx
+                          ? "bg-[#D4AF37] text-[#0A0A0A] shadow-md"
+                          : "bg-[#0A0A0A] text-[#8A8F8C] hover:text-[#F5F3EC] border border-[#1F6E4A]/30"
+                      }`}
+                    >
+                      <Package className="w-3.5 h-3.5" />
+                      <span>{ord.trackingCode || ord.id.slice(0, 8).toUpperCase()}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Status Banner */}
               <div className="p-4 rounded-2xl bg-[#0B3D2E]/40 border border-[#2FA36B]/50 flex items-center justify-between text-xs font-sans">
                 <div className="flex items-center gap-2.5">
                   <PackageCheck className="w-5 h-5 text-[#2FA36B]" />
                   <div>
-                    <span className="text-[#8A8F8C] block text-[10px]">Current Status:</span>
+                    <span className="text-[#8A8F8C] block text-[10px]">Current Live Progress:</span>
                     <strong className="text-[#F0D687] text-sm uppercase">
                       {order.status.replace(/_/g, " ")}
                     </strong>
@@ -135,7 +164,7 @@ export default function ActiveOrderWidget() {
 
               {/* Order Items Preview */}
               <div className="space-y-2 text-xs font-sans">
-                <span className="text-[#8A8F8C] font-semibold block">Order Items:</span>
+                <span className="text-[#8A8F8C] font-semibold block">Purchased Line Items:</span>
                 <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                   {order.items?.map((item: any, idx: number) => (
                     <div
