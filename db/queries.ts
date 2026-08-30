@@ -1,15 +1,6 @@
 import { db, schema } from "./index";
 import { sql, eq, desc } from "drizzle-orm";
 import { CheckoutFormValues } from "@/lib/validations/order";
-import {
-  saveOrderPersistent,
-  getOrderPersistent,
-  getAllOrdersPersistent,
-  updateOrderStatusPersistent,
-  deleteOrderPersistent,
-  getPromotionPersistent,
-  savePromotionPersistent,
-} from "./storage";
 
 let columnsEnsured = false;
 async function ensureDbColumns() {
@@ -20,7 +11,7 @@ async function ensureDbColumns() {
     await db.execute(sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS discount_percent integer DEFAULT 10;`);
     columnsEnsured = true;
   } catch (e) {
-    // Suppress if DDL already exists
+    // DDL migration catch
   }
 }
 
@@ -75,7 +66,7 @@ export const INITIAL_PRODUCTS: StaticProduct[] = [
     sizeLabel: "250ml",
     price: "499.00",
     description:
-      "Concentrated restorative oil elixir crafted with 40+ potent bio-active herbs cooked over 21 days in virgin cold-pressed sesame and coconut oils. Nourishes deep scalp layers, prevents premature graying, adds mirror shine, and tames frizz.",
+      "Restorative oil elixir crafted with 40+ potent bio-active herbs cooked over 21 days in virgin cold-pressed sesame and coconut oils.",
     ingredients:
       "Cold-pressed Virgin Coconut Oil, Sesame Seed Oil, Bhringraj, Amla, Brahmi, Hibiscus Flower Extract, Vetiver Root, Gunja, Lodhra, Jatamansi, Camphor, Rosemary Essential Oil, Vitamin E.",
     usage:
@@ -95,12 +86,8 @@ export const INITIAL_PROMOTION = {
   active: "true",
 };
 
-// Global in-memory storage for dev mode persistence
+// Global in-memory cache for ultra-fast dev performance
 const inMemoryOrders = new Map<string, any>();
-const inMemoryProducts = new Map<string, StaticProduct>(
-  INITIAL_PRODUCTS.map((p) => [p.id, { ...p }])
-);
-let inMemoryPromotion = { ...INITIAL_PROMOTION };
 
 function generateTrackingCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -130,10 +117,10 @@ export async function getProducts(): Promise<StaticProduct[]> {
         }));
       }
     } catch (e) {
-      // Silent fallback to stored products
+      // Return static fallback if DB unseeded
     }
   }
-  return Array.from(inMemoryProducts.values());
+  return INITIAL_PRODUCTS;
 }
 
 export async function getProductBySlug(slug: string): Promise<StaticProduct | null> {
@@ -143,6 +130,7 @@ export async function getProductBySlug(slug: string): Promise<StaticProduct | nu
 
 export async function getActivePromotion() {
   if (db) {
+    await ensureDbColumns();
     try {
       const activePromos = await db
         .select()
@@ -152,10 +140,10 @@ export async function getActivePromotion() {
         return activePromos[0];
       }
     } catch (e) {
-      // Silent fallback to persistent store when DB table columns differ
+      // Fallback
     }
   }
-  return getPromotionPersistent();
+  return INITIAL_PROMOTION;
 }
 
 export async function processOrderCreation(
@@ -260,7 +248,7 @@ export async function processOrderCreation(
   if (db) {
     await ensureDbColumns();
     try {
-      // 1. Ensure products exist in DB first so foreign key constraints on orderItems succeed
+      // 1. Ensure products exist in DB
       const dbProds = await db.select().from(schema.products);
       if (dbProds.length === 0) {
         for (const p of INITIAL_PRODUCTS) {
@@ -279,7 +267,7 @@ export async function processOrderCreation(
         }
       }
 
-      // 2. Insert customer if not already existing
+      // 2. Insert customer into Neon DB
       const existingCust = await db.select().from(schema.customers).where(eq(schema.customers.id, customerId));
       if (existingCust.length === 0) {
         await db.insert(schema.customers).values({
@@ -338,8 +326,7 @@ export async function processOrderCreation(
     }
   }
 
-  // ALWAYS save to persistent storage engine
-  saveOrderPersistent(newOrderSummary);
+  // Cache in-memory for active session
   inMemoryOrders.set(orderId, newOrderSummary);
   inMemoryOrders.set(trackingCode, newOrderSummary);
 
@@ -347,26 +334,28 @@ export async function processOrderCreation(
 }
 
 export async function getOrderById(orderIdOrCode?: string) {
-  // 1. Check persistent file storage first
-  const persistentMatch = getOrderPersistent(orderIdOrCode);
-  if (persistentMatch) {
-    return persistentMatch;
-  }
+  if (!orderIdOrCode || orderIdOrCode.trim() === "") return null;
 
-  // 2. Query Neon DB if connected
-  if (db && orderIdOrCode) {
+  const raw = orderIdOrCode.trim();
+  const cleaned = raw.replace(/[\s\-_]/g, "").toUpperCase();
+
+  // 1. Query Neon DB directly first
+  if (db) {
+    await ensureDbColumns();
     try {
-      const orderRecord = await db
-        .select()
-        .from(schema.orders)
-        .where(eq(schema.orders.id, orderIdOrCode));
+      const dbOrders = await db.select().from(schema.orders);
+      const matchedOrder = dbOrders.find((o) => {
+        const cId = (o.id || "").replace(/[\s\-_]/g, "").toUpperCase();
+        const cCode = ((o as any).trackingCode || "").replace(/[\s\-_]/g, "").toUpperCase();
+        return o.id === raw || (o as any).trackingCode === raw || cId === cleaned || cCode === cleaned;
+      });
 
-      if (orderRecord.length > 0) {
-        const order = orderRecord[0];
+      if (matchedOrder) {
         const customerRecord = await db
           .select()
           .from(schema.customers)
-          .where(eq(schema.customers.id, order.customerId));
+          .where(eq(schema.customers.id, matchedOrder.customerId));
+
         const itemsRecords = await db
           .select({
             id: schema.orderItems.id,
@@ -381,56 +370,57 @@ export async function getOrderById(orderIdOrCode?: string) {
             schema.products,
             eq(schema.orderItems.productId, schema.products.id)
           )
-          .where(eq(schema.orderItems.orderId, order.id));
+          .where(eq(schema.orderItems.orderId, matchedOrder.id));
 
         return {
-          id: order.id,
-          trackingCode: (order as any).trackingCode || order.id.slice(0, 8).toUpperCase(),
-          customer: customerRecord[0],
-          totalAmount: order.totalAmount,
-          shippingFee: order.shippingFee,
-          paymentMethod: order.paymentMethod,
-          status: order.status,
-          courierName: order.courierName || null,
-          trackingNumber: order.trackingNumber || null,
-          adminNotes: order.adminNotes || null,
-          createdAt: order.createdAt.toISOString(),
+          id: matchedOrder.id,
+          trackingCode: (matchedOrder as any).trackingCode || matchedOrder.id.slice(0, 8).toUpperCase(),
+          customer: customerRecord[0] || { name: "Customer", phone: "" },
+          totalAmount: matchedOrder.totalAmount,
+          shippingFee: matchedOrder.shippingFee,
+          paymentMethod: matchedOrder.paymentMethod,
+          status: matchedOrder.status,
+          courierName: matchedOrder.courierName || null,
+          trackingNumber: matchedOrder.trackingNumber || null,
+          adminNotes: matchedOrder.adminNotes || null,
+          createdAt: matchedOrder.createdAt ? matchedOrder.createdAt.toISOString() : new Date().toISOString(),
           items: itemsRecords,
         };
       }
     } catch (e) {
-      // Silent fallback
+      console.warn("Neon DB getOrderById Error:", e);
     }
   }
 
-  return getOrderPersistent(orderIdOrCode);
+  // 2. Fallback to inMemoryOrders cache
+  for (const val of inMemoryOrders.values()) {
+    const cleanId = (val.id || "").replace(/[\s\-_]/g, "").toUpperCase();
+    const cleanCode = (val.trackingCode || "").replace(/[\s\-_]/g, "").toUpperCase();
+    if (
+      val.id === raw ||
+      val.trackingCode === raw ||
+      cleanId === cleaned ||
+      cleanCode === cleaned
+    ) {
+      return val;
+    }
+  }
+
+  return null;
 }
 
 export async function getAllOrdersAdmin() {
-  const mergedOrdersMap = new Map<string, any>();
-
-  // Add all persistent orders first
-  for (const order of getAllOrdersPersistent()) {
-    if (order && order.id) {
-      mergedOrdersMap.set(order.id, order);
-    }
-  }
-
-  // Add in-memory orders
-  for (const order of inMemoryOrders.values()) {
-    if (order && order.id) {
-      mergedOrdersMap.set(order.id, order);
-    }
-  }
-
   if (db) {
+    await ensureDbColumns();
     try {
       const dbOrders = await db.select().from(schema.orders).orderBy(desc(schema.orders.createdAt));
+      const result = [];
       for (const order of dbOrders) {
         const customerRecord = await db
           .select()
           .from(schema.customers)
           .where(eq(schema.customers.id, order.customerId));
+
         const itemsRecords = await db
           .select({
             id: schema.orderItems.id,
@@ -447,9 +437,9 @@ export async function getAllOrdersAdmin() {
           )
           .where(eq(schema.orderItems.orderId, order.id));
 
-        const dbOrderObj = {
+        result.push({
           id: order.id,
-          trackingCode: order.trackingCode,
+          trackingCode: (order as any).trackingCode || order.id.slice(0, 8).toUpperCase(),
           customer: customerRecord[0] || { name: "Customer", phone: "" },
           totalAmount: order.totalAmount,
           shippingFee: order.shippingFee,
@@ -458,18 +448,20 @@ export async function getAllOrdersAdmin() {
           courierName: order.courierName || null,
           trackingNumber: order.trackingNumber || null,
           adminNotes: order.adminNotes || null,
-          createdAt: order.createdAt.toISOString(),
+          createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
           items: itemsRecords,
-        };
+        });
+      }
 
-        mergedOrdersMap.set(order.id, dbOrderObj);
+      if (result.length > 0) {
+        return result;
       }
     } catch (e) {
-      console.warn("Neon DB getAllOrdersAdmin failed:", e);
+      console.warn("Neon DB getAllOrdersAdmin Error:", e);
     }
   }
 
-  return Array.from(mergedOrdersMap.values());
+  return Array.from(inMemoryOrders.values());
 }
 
 export async function updateOrderStatusAdmin(
@@ -479,20 +471,8 @@ export async function updateOrderStatusAdmin(
   trackingNumber?: string,
   adminNotes?: string
 ) {
-  // Update persistent file storage first
-  updateOrderStatusPersistent(orderId, newStatus, courierName, trackingNumber, adminNotes);
-
-  // Update in-memory store
-  for (const [key, val] of inMemoryOrders.entries()) {
-    if (val.id === orderId) {
-      val.status = newStatus;
-      if (courierName !== undefined) val.courierName = courierName;
-      if (trackingNumber !== undefined) val.trackingNumber = trackingNumber;
-      if (adminNotes !== undefined) val.adminNotes = adminNotes;
-    }
-  }
-
   if (db) {
+    await ensureDbColumns();
     try {
       await db
         .update(schema.orders)
@@ -504,7 +484,16 @@ export async function updateOrderStatusAdmin(
         })
         .where(eq(schema.orders.id, orderId));
     } catch (e) {
-      console.warn("Neon DB updateOrderStatusAdmin failed:", e);
+      console.warn("Neon DB updateOrderStatusAdmin Error:", e);
+    }
+  }
+
+  for (const [key, val] of inMemoryOrders.entries()) {
+    if (val.id === orderId) {
+      val.status = newStatus;
+      if (courierName !== undefined) val.courierName = courierName;
+      if (trackingNumber !== undefined) val.trackingNumber = trackingNumber;
+      if (adminNotes !== undefined) val.adminNotes = adminNotes;
     }
   }
 
@@ -512,7 +501,14 @@ export async function updateOrderStatusAdmin(
 }
 
 export async function deleteOrderAdmin(orderId: string) {
-  deleteOrderPersistent(orderId);
+  if (db) {
+    try {
+      await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, orderId));
+      await db.delete(schema.orders).where(eq(schema.orders.id, orderId));
+    } catch (e) {
+      console.warn("Neon DB deleteOrderAdmin Error:", e);
+    }
+  }
 
   for (const [key, val] of inMemoryOrders.entries()) {
     if (val.id === orderId) {
@@ -520,24 +516,10 @@ export async function deleteOrderAdmin(orderId: string) {
     }
   }
 
-  if (db) {
-    try {
-      await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, orderId));
-      await db.delete(schema.orders).where(eq(schema.orders.id, orderId));
-    } catch (e) {
-      console.warn("Neon DB deleteOrderAdmin failed:", e);
-    }
-  }
-
   return { success: true };
 }
 
 export async function updateProductAdmin(productId: string, updatedData: Partial<StaticProduct>) {
-  if (inMemoryProducts.has(productId)) {
-    const existing = inMemoryProducts.get(productId)!;
-    inMemoryProducts.set(productId, { ...existing, ...updatedData });
-  }
-
   if (db) {
     try {
       await db
@@ -551,10 +533,9 @@ export async function updateProductAdmin(productId: string, updatedData: Partial
         })
         .where(eq(schema.products.id, productId));
     } catch (e) {
-      console.warn("Neon DB updateProductAdmin failed:", e);
+      console.warn("Neon DB updateProductAdmin Error:", e);
     }
   }
-
   return { success: true };
 }
 
@@ -565,14 +546,8 @@ export async function updatePromotionAdmin(promoData: {
   discountPercent?: number;
   active: string;
 }) {
-  savePromotionPersistent(promoData);
-
-  inMemoryPromotion = {
-    ...inMemoryPromotion,
-    ...promoData,
-  };
-
   if (db) {
+    await ensureDbColumns();
     try {
       const existing = await db.select().from(schema.promotions);
       if (existing.length > 0) {
@@ -597,9 +572,8 @@ export async function updatePromotionAdmin(promoData: {
         });
       }
     } catch (e) {
-      console.warn("Neon DB updatePromotionAdmin failed:", e);
+      console.warn("Neon DB updatePromotionAdmin Error:", e);
     }
   }
-
   return { success: true };
 }
