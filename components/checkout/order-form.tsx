@@ -635,9 +635,6 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
           </button>
 
           <div className="text-center text-[10px] text-[#8A8F8C] space-y-1 font-sans">
-            <p className="flex items-center justify-center gap-1">
-              <Lock className="w-3 h-3 text-[#D4AF37]" /> 256-bit Encrypted Checkout • COD Pan-India
-            </p>
             <p>Direct Support: 8778359259 | @ayurvya.official</p>
           </div>
         </div>

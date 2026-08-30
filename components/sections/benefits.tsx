@@ -101,15 +101,15 @@ export default function BenefitsSection() {
 
         <BotanicalDivider className="my-6" />
 
-        {/* Benefits Visual Widget Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+        {/* Benefits Visual Widget Cards Container: Horizontal Scroll on Mobile, Grid on Desktop */}
+        <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none gap-4 pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 md:pb-0 pt-2">
           {BENEFIT_WIDGETS.map((item, idx) => {
             const IconComp = item.icon;
 
             return (
               <div
                 key={idx}
-                className="gold-glow-card rounded-2xl p-6 flex flex-col justify-between border border-[#1F6E4A]/30 hover:border-[#D4AF37]/60 transition-all cursor-pointer group"
+                className="w-[85vw] sm:w-[340px] md:w-auto shrink-0 snap-center md:shrink gold-glow-card rounded-2xl p-6 flex flex-col justify-between border border-[#1F6E4A]/30 hover:border-[#D4AF37]/60 transition-all cursor-pointer group"
               >
                 <div>
                   {/* Widget Visual Header Box */}

@@ -36,10 +36,10 @@ export default function HeroSection() {
           {/* Left Text & Key Value Points */}
           <div className="lg:col-span-7 text-left">
             {/* Top Luxury Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#101512] border border-[#D4AF37]/40 shadow-[0_0_20px_rgba(212,175,55,0.2)] mb-4">
-              <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-ping shrink-0" />
-              <span className="text-xs font-mono font-bold tracking-widest text-[#F0D687] uppercase">
-                100% Pure Organic Ayurvedic Formulation
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#101512] border border-[#D4AF37]/40 shadow-[0_0_15px_rgba(212,175,55,0.2)] mb-4 max-w-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-ping shrink-0" />
+              <span className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-[#F0D687] uppercase truncate">
+                100% Organic Ayurvedic Formulation
               </span>
             </div>
 

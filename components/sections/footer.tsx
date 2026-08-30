@@ -189,10 +189,7 @@ export default function Footer() {
             <Truck className="w-4 h-4 text-[#2FA36B]" />
             <span>Express Pan-India Delivery</span>
           </div>
-          <div className="flex items-center justify-center gap-2 text-[#F5F3EC]">
-            <Lock className="w-4 h-4 text-[#D4AF37]" />
-            <span>Encrypted COD Checkout</span>
-          </div>
+ 
           <div className="flex items-center justify-center gap-2 text-[#F5F3EC]">
             <Heart className="w-4 h-4 text-[#2FA36B]" />
             <span>100% Herbal Guarantee</span>
