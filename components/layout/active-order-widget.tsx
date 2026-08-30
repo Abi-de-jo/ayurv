@@ -41,11 +41,22 @@ export default function ActiveOrderWidget() {
         );
         if (res.ok) {
           const data = await res.json();
-          if (data.orders && data.orders.length > 0) {
-            setOrders(data.orders);
-          } else if (data.order) {
-            setOrders([data.order]);
-          }
+          let rawOrders = data.orders && data.orders.length > 0 ? data.orders : data.order ? [data.order] : [];
+
+          // Auto-hide delivered/rejected orders from UI after 24 hours (1 day) while keeping safely in DB
+          const now = Date.now();
+          const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+          const activeOrders = rawOrders.filter((ord: any) => {
+            if (ord.status === "delivered" || ord.status === "rejected" || ord.status === "cancelled") {
+              const orderTime = new Date(ord.createdAt || Date.now()).getTime();
+              if (now - orderTime > ONE_DAY_MS) {
+                return false;
+              }
+            }
+            return true;
+          });
+
+          setOrders(activeOrders);
         }
       } catch (e) {
         console.warn("Active order widget fetch error:", e);
