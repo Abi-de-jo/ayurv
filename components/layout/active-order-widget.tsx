@@ -71,25 +71,35 @@ export default function ActiveOrderWidget() {
 
   return (
     <>
-      {/* Floating Bottom-Left Pill Button */}
-      <div className="fixed bottom-6 left-6 z-40">
+      {/* Floating Bottom-Left Pill Button (Responsive Mobile & Desktop) */}
+      <div className="fixed bottom-4 sm:bottom-6 left-3 sm:left-6 z-40 max-w-[calc(100vw-1.5rem)]">
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => setIsOpen(true)}
-          className="bg-[#101512]/95 border-2 border-[#D4AF37] text-[#F5F3EC] px-4 py-2.5 rounded-full shadow-[0_0_25px_rgba(212,175,55,0.4)] backdrop-blur-md flex items-center gap-2.5 cursor-pointer text-xs font-sans font-bold"
+          className="bg-[#101512]/95 border-2 border-[#D4AF37] text-[#F5F3EC] px-3 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-[0_0_25px_rgba(212,175,55,0.4)] backdrop-blur-md flex items-center gap-1.5 sm:gap-2.5 cursor-pointer text-[11px] sm:text-xs font-sans font-bold transition-all"
         >
-          <div className="w-6 h-6 rounded-full bg-[#0B3D2E] border border-[#2FA36B] flex items-center justify-center text-[#2FA36B]">
-            <Truck className="w-3.5 h-3.5" />
+          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#0B3D2E] border border-[#2FA36B] flex items-center justify-center text-[#2FA36B] shrink-0">
+            <Truck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           </div>
-          <span>My Orders ({orders.length}):</span>
-          <span className="text-[#F0D687] font-mono">{trackingCode}</span>
-          <span className="bg-[#0B3D2E] text-[#2FA36B] text-[10px] uppercase px-2 py-0.5 rounded-full border border-[#2FA36B]/40 font-semibold">
+          <span className="hidden sm:inline">Orders ({orders.length}):</span>
+          <span className="text-[#F0D687] font-mono tracking-tight font-bold">{trackingCode}</span>
+          <span
+            className={`text-[9px] sm:text-[10px] uppercase px-2 py-0.5 rounded-full border font-bold shrink-0 ${
+              order.status === "delivered"
+                ? "bg-emerald-950/90 text-emerald-300 border-emerald-400"
+                : order.status === "shipped" || order.status === "out_for_delivery"
+                ? "bg-blue-950/90 text-blue-300 border-blue-400"
+                : order.status === "rejected" || order.status === "cancelled"
+                ? "bg-red-950/90 text-red-300 border-red-500"
+                : "bg-[#0B3D2E] text-[#2FA36B] border-[#2FA36B]/50"
+            }`}
+          >
             {order.status.replace(/_/g, " ")}
           </span>
-          <ChevronUp className="w-3.5 h-3.5 text-[#D4AF37]" />
+          <ChevronUp className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
         </motion.button>
       </div>
 

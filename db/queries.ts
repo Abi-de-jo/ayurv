@@ -7,6 +7,9 @@ async function ensureDbColumns() {
   if (!db || columnsEnsured) return;
   try {
     await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_code text;`);
+    await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name text;`);
+    await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number text;`);
+    await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes text;`);
     await db.execute(sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS code text DEFAULT 'AYURV10';`);
     await db.execute(sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS discount_percent integer DEFAULT 10;`);
     columnsEnsured = true;
@@ -86,7 +89,7 @@ export const INITIAL_PROMOTION = {
   active: "true",
 };
 
-// Global in-memory cache for ultra-fast dev performance
+// Global in-memory cache for active dev session
 const inMemoryOrders = new Map<string, any>();
 
 function generateTrackingCode(): string {
@@ -326,7 +329,6 @@ export async function processOrderCreation(
     }
   }
 
-  // Cache in-memory for active session
   inMemoryOrders.set(orderId, newOrderSummary);
   inMemoryOrders.set(trackingCode, newOrderSummary);
 
@@ -339,7 +341,7 @@ export async function getOrderById(orderIdOrCode?: string) {
   const raw = orderIdOrCode.trim();
   const cleaned = raw.replace(/[\s\-_]/g, "").toUpperCase();
 
-  // 1. Query Neon DB directly first
+  // Query Neon DB directly
   if (db) {
     await ensureDbColumns();
     try {
@@ -392,7 +394,7 @@ export async function getOrderById(orderIdOrCode?: string) {
     }
   }
 
-  // 2. Fallback to inMemoryOrders cache
+  // Check inMemoryOrders cache
   for (const val of inMemoryOrders.values()) {
     const cleanId = (val.id || "").replace(/[\s\-_]/g, "").toUpperCase();
     const cleanCode = (val.trackingCode || "").replace(/[\s\-_]/g, "").toUpperCase();
@@ -407,6 +409,73 @@ export async function getOrderById(orderIdOrCode?: string) {
   }
 
   return null;
+}
+
+export async function getOrdersByCustomerId(customerKeyOrId: string) {
+  if (!customerKeyOrId || customerKeyOrId.trim() === "") return [];
+
+  if (db) {
+    await ensureDbColumns();
+    try {
+      const raw = customerKeyOrId.trim();
+
+      const dbOrders = await db
+        .select()
+        .from(schema.orders)
+        .where(eq(schema.orders.customerId, raw));
+
+      const result = [];
+      for (const order of dbOrders) {
+        const customerRecord = await db
+          .select()
+          .from(schema.customers)
+          .where(eq(schema.customers.id, order.customerId));
+
+        const itemsRecords = await db
+          .select({
+            id: schema.orderItems.id,
+            quantity: schema.orderItems.quantity,
+            unitPrice: schema.orderItems.unitPrice,
+            isFreeGift: schema.orderItems.isFreeGift,
+            productName: schema.products.name,
+            sizeLabel: schema.products.sizeLabel,
+          })
+          .from(schema.orderItems)
+          .innerJoin(
+            schema.products,
+            eq(schema.orderItems.productId, schema.products.id)
+          )
+          .where(eq(schema.orderItems.orderId, order.id));
+
+        result.push({
+          id: order.id,
+          trackingCode: (order as any).trackingCode || order.id.slice(0, 8).toUpperCase(),
+          customer: customerRecord[0] || { name: "Customer", phone: "" },
+          totalAmount: order.totalAmount,
+          shippingFee: order.shippingFee,
+          paymentMethod: order.paymentMethod,
+          status: order.status,
+          courierName: order.courierName || null,
+          trackingNumber: order.trackingNumber || null,
+          adminNotes: order.adminNotes || null,
+          createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
+          items: itemsRecords,
+        });
+      }
+
+      return result;
+    } catch (e) {
+      console.warn("Neon DB getOrdersByCustomerId Error:", e);
+    }
+  }
+
+  const matches = [];
+  for (const val of inMemoryOrders.values()) {
+    if (val.customer?.id === customerKeyOrId) {
+      matches.push(val);
+    }
+  }
+  return matches;
 }
 
 export async function getAllOrdersAdmin() {

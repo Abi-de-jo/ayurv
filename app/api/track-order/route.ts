@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrderById } from "@/db/queries";
-import { getOrdersByCustomerIdPersistent } from "@/db/storage";
+import { getOrderById, getOrdersByCustomerId } from "@/db/queries";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -9,15 +8,15 @@ export async function GET(req: NextRequest) {
 
   let orders: any[] = [];
 
-  // If specific tracking code is supplied, search by code first
+  // 1. If tracking code is supplied, search by code in Neon DB
   let order: any = null;
   if (code && code.trim() !== "") {
     order = await getOrderById(code);
   }
 
-  // If customer key is supplied, retrieve all orders for this customer
+  // 2. If customer key is supplied, retrieve all orders for this customer from Neon DB
   if (customerKey && customerKey.trim() !== "") {
-    orders = getOrdersByCustomerIdPersistent(customerKey);
+    orders = await getOrdersByCustomerId(customerKey);
   }
 
   // Set default active order if match found in customer orders list
@@ -25,7 +24,7 @@ export async function GET(req: NextRequest) {
     order = orders[orders.length - 1];
   }
 
-  // If still no order found, return 404
+  // 3. Return 404 if no order found in Neon DB
   if (!order) {
     return NextResponse.json(
       { error: "Order not found", orders: [] },
