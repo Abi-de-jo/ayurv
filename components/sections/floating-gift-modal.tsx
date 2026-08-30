@@ -14,10 +14,6 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
   const [isAlreadyClaimed, setIsAlreadyClaimed] = useState(false);
 
   const fetchLivePromo = async () => {
-    if (typeof window !== "undefined" && localStorage.getItem("ayurvya_promo_claimed") === "true") {
-      setIsAlreadyClaimed(true);
-      return;
-    }
     try {
       const customerKey = getOrCreateCustomerKey();
       const res = await fetch(`/api/promotion?customerKey=${encodeURIComponent(customerKey)}`);
@@ -28,12 +24,6 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
         }
         if (data.alreadyUsed) {
           setIsAlreadyClaimed(true);
-        } else {
-          const promoCode = data.promo?.code || "AYURV10";
-          const usedPromos: string[] = JSON.parse(localStorage.getItem("ayurvya_used_promos") || "[]");
-          if (usedPromos.includes(promoCode)) {
-            setIsAlreadyClaimed(true);
-          }
         }
       }
     } catch (e) {
@@ -180,12 +170,7 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
               <div className="space-y-3">
                 <Link
                   href="/checkout"
-                  onClick={() => {
-                    if (typeof window !== "undefined") {
-                      localStorage.setItem("ayurvya_promo_claimed", "true");
-                    }
-                    setIsOpen(false);
-                  }}
+                  onClick={() => setIsOpen(false)}
                   className="btn-gold-foil w-full py-3.5 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-105 transition-transform"
                 >
                   <span>{isAlreadyClaimed ? "Proceed to Checkout" : "Claim Offer & Order Now"}</span>

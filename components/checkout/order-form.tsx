@@ -115,10 +115,9 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
       return;
     }
 
-    // Check if user has already used this promo code on a previous order
-    const usedPromos: string[] = JSON.parse(localStorage.getItem("ayurvya_used_promos") || "[]");
-    if (usedPromos.includes(cleanCode)) {
-      setPromoError(`You have already claimed promo code '${cleanCode}'. Each offer is limited to 1 use per customer.`);
+    // Check if user has already used this promo code in Neon DB
+    if (isPromoAlreadyClaimed) {
+      setPromoError(`You have already claimed promo code '${cleanCode}' on a previous order. Each offer is limited to 1 use per customer.`);
       return;
     }
 
