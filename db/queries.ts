@@ -281,81 +281,90 @@ export async function processOrderCreation(
         });
       }
 
-      // 3. Insert order
-      await db.insert(schema.orders).values({
-        id: orderId,
-        trackingCode: trackingCode,
-        customerId: customerId,
-        totalAmount: grandTotal.toFixed(2),
-        shippingFee: shippingFee.toFixed(2),
-        paymentMethod: formValues.paymentMethod as any,
-        status: "confirmed",
-      });
-
-      // 4. Insert order items
-      for (const item of itemDetails) {
-        await db.insert(schema.orderItems).values({
-          id: crypto.randomUUID(),
-          orderId: orderId,
-          productId: item.product.id,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          isFreeGift: item.isFreeGift,
+        // 3. Insert order with fallback for older table schemas
+      try {
+        await db.insert(schema.orders).values({
+          id: orderId,
+          trackingCode: trackingCode,
+          customerId: customerId,
+          totalAmount: grandTotal.toFixed(2),
+          shippingFee: shippingFee.toFixed(2),
+          paymentMethod: formValues.paymentMethod as any,
+          status: "confirmed",
         });
+      } catch (errOrders) {
+        try {
+          await db.insert(schema.orders).values({
+            id: orderId,
+            customerId: customerId,
+            totalAmount: grandTotal.toFixed(2),
+            shippingFee: shippingFee.toFixed(2),
+            paymentMethod: formValues.paymentMethod as any,
+            status: "confirmed",
+          } as any);
+        } catch (e2) {
+          console.warn("Neon DB Orders Insert Error:", e2);
+        }
+      }
+
+      // 4. Insert order items (ensuring foreign key product exists in DB)
+      for (const item of itemDetails) {
+        try {
+          const existingProd = await db.select().from(schema.products).where(eq(schema.products.id, item.product.id));
+          if (existingProd.length === 0) {
+            await db.insert(schema.products).values({
+              id: item.product.id,
+              slug: item.product.slug,
+              name: item.product.name,
+              sizeLabel: item.product.sizeLabel,
+              price: item.product.price,
+              description: item.product.description,
+              ingredients: item.product.ingredients,
+              usage: item.product.usage,
+              image: item.product.image,
+              stock: item.product.stock,
+            });
+          }
+
+          await db.insert(schema.orderItems).values({
+            id: crypto.randomUUID(),
+            orderId: orderId,
+            productId: item.product.id,
+            quantity: item.quantity,
+            unitPrice: String(item.unitPrice),
+            isFreeGift: String(item.isFreeGift),
+          });
+        } catch (errItem) {
+          console.warn("Neon DB OrderItem Insert Error:", errItem);
+        }
       }
     } catch (e) {
-      console.warn("Neon DB Order Insert Error:", e);
+      console.warn("Neon DB Order Creation Error:", e);
     }
   }
 
+  // ALWAYS save to persistent storage engine
+  saveOrderPersistent(newOrderSummary);
   inMemoryOrders.set(orderId, newOrderSummary);
   inMemoryOrders.set(trackingCode, newOrderSummary);
-  saveOrderPersistent(newOrderSummary);
 
   return newOrderSummary;
 }
 
 export async function getOrderById(orderIdOrCode?: string) {
-  const persistentOrder = getOrderPersistent(orderIdOrCode);
-  if (persistentOrder) {
-    return persistentOrder;
+  // 1. Check persistent file storage first
+  const persistentMatch = getOrderPersistent(orderIdOrCode);
+  if (persistentMatch) {
+    return persistentMatch;
   }
 
-  const allInMemory = Array.from(new Set(inMemoryOrders.values()));
-
-  if (!orderIdOrCode || orderIdOrCode.trim() === "" || orderIdOrCode === "latest") {
-    if (allInMemory.length > 0) {
-      return allInMemory[allInMemory.length - 1];
-    }
-  }
-
-  if (!orderIdOrCode) return null;
-
-  const raw = orderIdOrCode.trim();
-  const cleaned = raw.replace(/[\s\-_]/g, "").toUpperCase();
-
-  // Check inMemoryOrders fuzzy match
-  for (const val of allInMemory) {
-    const cleanId = (val.id || "").replace(/[\s\-_]/g, "").toUpperCase();
-    const cleanCode = (val.trackingCode || "").replace(/[\s\-_]/g, "").toUpperCase();
-    if (
-      val.id === raw ||
-      val.trackingCode === raw ||
-      cleanId === cleaned ||
-      cleanCode === cleaned ||
-      cleanId.includes(cleaned) ||
-      cleanCode.includes(cleaned)
-    ) {
-      return val;
-    }
-  }
-
-  if (db) {
+  // 2. Query Neon DB if connected
+  if (db && orderIdOrCode) {
     try {
       const orderRecord = await db
         .select()
         .from(schema.orders)
-        .where(eq(schema.orders.id, raw));
+        .where(eq(schema.orders.id, orderIdOrCode));
 
       if (orderRecord.length > 0) {
         const order = orderRecord[0];
@@ -381,7 +390,7 @@ export async function getOrderById(orderIdOrCode?: string) {
 
         return {
           id: order.id,
-          trackingCode: order.trackingCode,
+          trackingCode: (order as any).trackingCode || order.id.slice(0, 8).toUpperCase(),
           customer: customerRecord[0],
           totalAmount: order.totalAmount,
           shippingFee: order.shippingFee,
@@ -395,11 +404,11 @@ export async function getOrderById(orderIdOrCode?: string) {
         };
       }
     } catch (e) {
-      // Silent fallback to persistent order store when DB table columns differ
+      // Silent fallback
     }
   }
 
-  return null;
+  return getOrderPersistent(orderIdOrCode);
 }
 
 export async function getAllOrdersAdmin() {
