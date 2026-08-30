@@ -107,6 +107,13 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
       return;
     }
 
+    // Check if user has already used this promo code on a previous order
+    const usedPromos: string[] = JSON.parse(localStorage.getItem("ayurvya_used_promos") || "[]");
+    if (usedPromos.includes(cleanCode)) {
+      setPromoError(`You have already claimed promo code '${cleanCode}'. Each offer is limited to 1 use per customer.`);
+      return;
+    }
+
     const expectedCode = (activePromo?.code || "AYURV10").toUpperCase();
 
     if (cleanCode === expectedCode) {

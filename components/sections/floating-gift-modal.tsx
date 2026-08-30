@@ -9,6 +9,7 @@ import confetti from "canvas-confetti";
 export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPromo, setCurrentPromo] = useState<any>(promotion || null);
+  const [isAlreadyClaimed, setIsAlreadyClaimed] = useState(false);
 
   const fetchLivePromo = async () => {
     try {
@@ -26,10 +27,17 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
 
   useEffect(() => {
     fetchLivePromo();
-    // Poll every 5 seconds for admin promotion updates
     const timer = setInterval(fetchLivePromo, 5000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const promoCode = currentPromo?.code || "AYURV10";
+    const usedPromos: string[] = JSON.parse(localStorage.getItem("ayurvya_used_promos") || "[]");
+    if (usedPromos.includes(promoCode)) {
+      setIsAlreadyClaimed(true);
+    }
+  }, [currentPromo?.code]);
 
   if (currentPromo && currentPromo.active === "false") return null;
 
@@ -39,15 +47,17 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
     "Order any 500g or 250g Shikakai Pack and receive a complimentary 20ml Herbal Hair Oil Elixir + Free Express Delivery Across India.";
 
   const handleGiftClick = () => {
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.85, x: 0.85 },
-        colors: ["#D4AF37", "#F0D687", "#2FA36B", "#ffffff"],
-      });
-    } catch {
-      // Fallback safe
+    if (!isAlreadyClaimed) {
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.85, x: 0.85 },
+          colors: ["#D4AF37", "#F0D687", "#2FA36B", "#ffffff"],
+        });
+      } catch {
+        // Fallback safe
+      }
     }
     setIsOpen(true);
   };
@@ -65,7 +75,7 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
             className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-[#101512]/95 border border-[#D4AF37]/50 shadow-[0_0_20px_rgba(212,175,55,0.35)] backdrop-blur-md cursor-pointer hover:border-[#D4AF37] transition-all"
           >
             <span className="text-xs font-mono font-bold text-[#F0D687] uppercase tracking-widest">
-              CLAIM FREE GIFT
+              {isAlreadyClaimed ? "OFFER CLAIMED" : "CLAIM FREE GIFT"}
             </span>
           </motion.div>
         )}
@@ -78,10 +88,12 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
           aria-label="Claim Exclusive Gift"
         >
           <Gift className="w-7 h-7 sm:w-8 sm:h-8 text-[#F5F3EC] animate-bounce" />
-          <span className="absolute -top-1 -right-1 flex h-4 w-4">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-[#D4AF37]"></span>
-          </span>
+          {!isAlreadyClaimed && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D4AF37] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-[#D4AF37]"></span>
+            </span>
+          )}
         </motion.button>
       </div>
 
@@ -120,15 +132,17 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
 
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[11px] font-mono font-bold tracking-widest text-[#F0D687] uppercase mb-3">
                 <Check className="w-3.5 h-3.5 text-[#2FA36B]" />
-                <span>EXCLUSIVE OFFER UNLOCKED</span>
+                <span>{isAlreadyClaimed ? "PROMO ALREADY CLAIMED" : "EXCLUSIVE OFFER UNLOCKED"}</span>
               </div>
 
               <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#F5F3EC] mb-2 leading-tight">
-                Claim Your <span className="text-gold-shine italic">Free Gift</span>
+                {isAlreadyClaimed ? "Offer Already Claimed" : "Claim Your Free Gift"}
               </h3>
 
               <p className="text-xs text-[#8A8F8C] mb-6">
-                Special promotion automatically applied to your checkout session today.
+                {isAlreadyClaimed
+                  ? "You have already redeemed this 1-time promotional discount code on a previous order."
+                  : "Special promotion automatically applied to your checkout session today."}
               </p>
 
               <div className="bg-[#0B3D2E]/40 border border-[#D4AF37]/35 rounded-2xl p-4 mb-6 text-left relative overflow-hidden shadow-inner space-y-2">
@@ -160,7 +174,7 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
                   onClick={() => setIsOpen(false)}
                   className="btn-gold-foil w-full py-3.5 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-105 transition-transform"
                 >
-                  <span>Claim Offer & Order Now</span>
+                  <span>{isAlreadyClaimed ? "Proceed to Checkout" : "Claim Offer & Order Now"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 
