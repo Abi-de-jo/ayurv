@@ -106,9 +106,9 @@ export default function OrderTrackingPage() {
       case "confirmed":
         return {
           progressPercent: 15,
-          title: "Order Placed & Quality Verified",
-          subtitle: "Our Ayurvya Verification Team is processing your herbal order.",
-          stageName: "Verification Lab",
+          title: "Order Received & Pending Admin Dispatch",
+          subtitle: "Your order is recorded safely. Vehicle transit (Truck / Bike Rider) will activate live as soon as Admin approves & ships your parcel.",
+          stageName: "Order Received",
           vehicle: "clock",
         };
       case "processing":

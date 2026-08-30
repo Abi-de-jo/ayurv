@@ -99,12 +99,10 @@ export function saveOrderPersistent(order: StoredOrder) {
 
 export function getOrderPersistent(codeOrId?: string): StoredOrder | null {
   const allList = Array.from(new Set(fileOrders.values()));
+  if (allList.length === 0) return null;
 
   if (!codeOrId || codeOrId.trim() === "" || codeOrId === "latest") {
-    if (allList.length > 0) {
-      return allList[allList.length - 1];
-    }
-    return null;
+    return allList[allList.length - 1];
   }
 
   const raw = codeOrId.trim();

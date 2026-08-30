@@ -1,1 +1,43 @@
-[]
+[
+  {
+    "id": "51d3d3d2-6d37-462d-95de-3f14b8979b2f",
+    "trackingCode": "AYUR-4PC9MV",
+    "customer": {
+      "id": "AYUR-CUST-OKDG76BP",
+      "name": "Abisheik R",
+      "phone": "06384809761",
+      "email": "codebyabi@gmail.com",
+      "addressLine1": "Alanganathapuram tharanallur trichy -08",
+      "addressLine2": null,
+      "city": "trichy",
+      "state": "tamilnadu",
+      "pincode": "620008"
+    },
+    "totalAmount": "769.10",
+    "shippingFee": "50.00",
+    "paymentMethod": "cod",
+    "status": "confirmed",
+    "courierName": null,
+    "trackingNumber": null,
+    "adminNotes": "Promo Code Applied: AYURV10 (-₹79.90)",
+    "createdAt": "2026-08-30T06:51:06.971Z",
+    "items": [
+      {
+        "id": "65919968-6a9e-4bc0-bd32-870a21fede0e",
+        "productName": "Premium Herbal Shikakai Powder",
+        "sizeLabel": "500g",
+        "quantity": 1,
+        "unitPrice": "799.00",
+        "isFreeGift": "false"
+      },
+      {
+        "id": "9b2a7c63-1dab-4eb5-9e69-74595cb558b0",
+        "productName": "Herbal Hair Oil Elixir",
+        "sizeLabel": "~20ml",
+        "quantity": 1,
+        "unitPrice": "0.00",
+        "isFreeGift": "true"
+      }
+    ]
+  }
+]

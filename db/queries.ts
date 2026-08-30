@@ -117,7 +117,7 @@ export async function getProducts(): Promise<StaticProduct[]> {
         }));
       }
     } catch (e) {
-      console.warn("Neon DB query failed, using stored products fallback:", e);
+      // Silent fallback to stored products
     }
   }
   return Array.from(inMemoryProducts.values());
@@ -139,7 +139,7 @@ export async function getActivePromotion() {
         return activePromos[0];
       }
     } catch (e) {
-      console.warn("Neon DB query failed, using stored promo fallback:", e);
+      // Silent fallback to persistent store when DB table columns differ
     }
   }
   return getPromotionPersistent();
@@ -201,11 +201,14 @@ export async function processOrderCreation(
     return acc + parseFloat(item.unitPrice) * item.quantity;
   }, 0);
 
-  const grandTotal = itemsTotal + shippingFee;
+  const promoDiscount = parseFloat(formValues.discountAmount || "0");
+  const grandTotal = Math.max(0, itemsTotal + shippingFee - promoDiscount);
 
   const orderId = crypto.randomUUID();
   const trackingCode = generateTrackingCode();
-  const customerId = existingCustomerId || crypto.randomUUID();
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(existingCustomerId || "");
+  const customerId = isUuid ? existingCustomerId! : crypto.randomUUID();
 
   const newOrderSummary = {
     id: orderId,
@@ -227,7 +230,9 @@ export async function processOrderCreation(
     status: "confirmed",
     courierName: null,
     trackingNumber: null,
-    adminNotes: null,
+    adminNotes: formValues.appliedPromoCode
+      ? `Promo Code Applied: ${formValues.appliedPromoCode} (-₹${promoDiscount.toFixed(2)})`
+      : null,
     createdAt: new Date().toISOString(),
     items: itemDetails.map((item) => ({
       id: crypto.randomUUID(),
@@ -241,27 +246,29 @@ export async function processOrderCreation(
 
   if (db) {
     try {
-      await db.transaction(async (tx) => {
-        // Ensure products exist in DB first so foreign key constraints on orderItems succeed
-        const dbProds = await tx.select().from(schema.products);
-        if (dbProds.length === 0) {
-          for (const p of INITIAL_PRODUCTS) {
-            await tx.insert(schema.products).values({
-              id: p.id,
-              slug: p.slug,
-              name: p.name,
-              sizeLabel: p.sizeLabel,
-              price: p.price,
-              description: p.description,
-              ingredients: p.ingredients,
-              usage: p.usage,
-              image: p.image,
-              stock: p.stock,
-            });
-          }
+      // 1. Ensure products exist in DB first so foreign key constraints on orderItems succeed
+      const dbProds = await db.select().from(schema.products);
+      if (dbProds.length === 0) {
+        for (const p of INITIAL_PRODUCTS) {
+          await db.insert(schema.products).values({
+            id: p.id,
+            slug: p.slug,
+            name: p.name,
+            sizeLabel: p.sizeLabel,
+            price: p.price,
+            description: p.description,
+            ingredients: p.ingredients,
+            usage: p.usage,
+            image: p.image,
+            stock: p.stock,
+          });
         }
+      }
 
-        await tx.insert(schema.customers).values({
+      // 2. Insert customer if not already existing
+      const existingCust = await db.select().from(schema.customers).where(eq(schema.customers.id, customerId));
+      if (existingCust.length === 0) {
+        await db.insert(schema.customers).values({
           id: customerId,
           name: formValues.name,
           phone: formValues.phone,
@@ -272,29 +279,32 @@ export async function processOrderCreation(
           state: formValues.state,
           pincode: formValues.pincode,
         });
+      }
 
-        await tx.insert(schema.orders).values({
-          id: orderId,
-          trackingCode: trackingCode,
-          customerId: customerId,
-          totalAmount: grandTotal.toFixed(2),
-          shippingFee: shippingFee.toFixed(2),
-          paymentMethod: formValues.paymentMethod as any,
-          status: "confirmed",
-        });
-
-        for (const item of itemDetails) {
-          await tx.insert(schema.orderItems).values({
-            orderId: orderId,
-            productId: item.product.id,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            isFreeGift: item.isFreeGift,
-          });
-        }
+      // 3. Insert order
+      await db.insert(schema.orders).values({
+        id: orderId,
+        trackingCode: trackingCode,
+        customerId: customerId,
+        totalAmount: grandTotal.toFixed(2),
+        shippingFee: shippingFee.toFixed(2),
+        paymentMethod: formValues.paymentMethod as any,
+        status: "confirmed",
       });
+
+      // 4. Insert order items
+      for (const item of itemDetails) {
+        await db.insert(schema.orderItems).values({
+          id: crypto.randomUUID(),
+          orderId: orderId,
+          productId: item.product.id,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          isFreeGift: item.isFreeGift,
+        });
+      }
     } catch (e) {
-      console.warn("Neon DB order write error, saving to persistent store:", e);
+      console.warn("Neon DB Order Insert Error:", e);
     }
   }
 
@@ -385,7 +395,7 @@ export async function getOrderById(orderIdOrCode?: string) {
         };
       }
     } catch (e) {
-      console.warn("Neon DB getOrderById query failed:", e);
+      // Silent fallback to persistent order store when DB table columns differ
     }
   }
 

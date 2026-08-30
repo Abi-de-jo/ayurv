@@ -22,11 +22,16 @@ export default function ActiveOrderWidget() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    const code = localStorage.getItem("ayurvya_last_order_code");
+    const id = localStorage.getItem("ayurvya_last_order_id");
+
+    // Do NOT hit API or start polling interval if user has not placed any order yet
+    if (!code && !id) {
+      return;
+    }
+
     const fetchActiveOrder = async () => {
       const customerKey = getOrCreateCustomerKey();
-      const code = localStorage.getItem("ayurvya_last_order_code");
-      const id = localStorage.getItem("ayurvya_last_order_id");
-
       const param = code || id || "";
       try {
         const res = await fetch(

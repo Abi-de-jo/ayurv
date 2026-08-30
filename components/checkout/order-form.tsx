@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,7 @@ import { checkoutFormSchema, CheckoutFormValues } from "@/lib/validations/order"
 import { createOrder } from "@/app/actions/create-order";
 import { StaticProduct } from "@/db/queries";
 import { formatPrice } from "@/lib/utils";
+import { getOrCreateCustomerKey } from "@/lib/customer";
 import confetti from "canvas-confetti";
 import {
   ShoppingBag,
@@ -16,7 +17,6 @@ import {
   Plus,
   Minus,
   CheckCircle2,
-  ShieldCheck,
   Phone,
   User,
   MapPin,
@@ -24,14 +24,32 @@ import {
   Loader2,
   AlertCircle,
   Lock,
+  Tag,
+  Check,
 } from "lucide-react";
-
-import { getOrCreateCustomerKey } from "@/lib/customer";
 
 export default function OrderForm({ products }: { products: StaticProduct[] }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Live Promotion State
+  const [activePromo, setActivePromo] = useState<any>(null);
+  const [inputPromoCode, setInputPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoSuccessMsg, setPromoSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/promotion")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.promo && data.promo.active === "true") {
+          setActivePromo(data.promo);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch promo in checkout:", err));
+  }, []);
 
   // Default selection: 1x 500g Shikakai Powder
   const defaultShikakai = products.find((p) => p.slug === "shikakai-powder-500g") || products[0];
@@ -52,7 +70,6 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
     });
   };
 
-  // Convert quantity map into array for Zod & calculation
   const selectedItems = Object.entries(cartQuantities).map(([productId, quantity]) => ({
     productId,
     quantity,
@@ -60,7 +77,6 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
 
   const totalPaidItems = selectedItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Check if any Shikakai pack is selected to trigger free oil offer
   const hasShikakaiSelected = selectedItems.some((item) => {
     const prod = products.find((p) => p.id === item.productId);
     return prod && (prod.slug === "shikakai-powder-500g" || prod.slug === "shikakai-powder-250g");
@@ -74,7 +90,51 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
     return acc + (prod ? parseFloat(prod.price) * item.quantity : 0);
   }, 0);
 
-  const grandTotal = subtotal + shippingFee;
+  // Discount calculation if promo applied
+  const discountAmount = appliedPromo
+    ? (subtotal * (appliedPromo.discountPercent || 10)) / 100
+    : 0;
+
+  const grandTotal = Math.max(0, subtotal + shippingFee - discountAmount);
+
+  const handleApplyPromoCode = (codeToApply: string) => {
+    setPromoError(null);
+    setPromoSuccessMsg(null);
+
+    const cleanCode = codeToApply.trim().toUpperCase();
+    if (!cleanCode) {
+      setPromoError("Please enter a valid promo code.");
+      return;
+    }
+
+    const expectedCode = (activePromo?.code || "AYURV10").toUpperCase();
+
+    if (cleanCode === expectedCode) {
+      const promoObj = activePromo || {
+        code: "AYURV10",
+        discountPercent: 10,
+        headline: "EXCLUSIVE HERBAL OFFER",
+      };
+      setAppliedPromo(promoObj);
+      setPromoSuccessMsg(
+        `Code '${promoObj.code}' Applied successfully! ${promoObj.discountPercent}% Discount Unlocked.`
+      );
+
+      // Trigger celebration confetti
+      try {
+        confetti({
+          particleCount: 70,
+          spread: 60,
+          origin: { y: 0.7 },
+          colors: ["#D4AF37", "#2FA36B", "#F0D687"],
+        });
+      } catch {
+        // Safe
+      }
+    } else {
+      setPromoError(`Invalid promo code '${cleanCode}'. Available code: ${expectedCode}`);
+    }
+  };
 
   const {
     register,
@@ -108,6 +168,8 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
     const submissionPayload: CheckoutFormValues = {
       ...values,
       items: selectedItems,
+      appliedPromoCode: appliedPromo?.code,
+      discountAmount: discountAmount.toFixed(2),
     };
 
     try {
@@ -121,13 +183,14 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
         if (res.customerId) {
           localStorage.setItem("ayurvya_customer_id", res.customerId);
         }
-        // Trigger celebration confetti
+
         confetti({
-          particleCount: 80,
-          spread: 70,
+          particleCount: 100,
+          spread: 80,
           origin: { y: 0.6 },
           colors: ["#D4AF37", "#2FA36B", "#F0D687"],
         });
+
         router.push(`/order/${res.orderId}/success`);
       } else {
         setErrorMsg(res.error || "Failed to submit order.");
@@ -154,66 +217,80 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
                 Combine 2 or more items for FREE Shipping!
               </p>
             </div>
-            <span className="text-xs font-mono text-[#D4AF37] bg-[#0B3D2E] px-3 py-1 rounded border border-[#D4AF37]/30">
-              {totalPaidItems} Items Selected
-            </span>
           </div>
 
-          {/* SKU Cards */}
           <div className="space-y-4">
-            {products.map((product) => {
-              const qty = cartQuantities[product.id] || 0;
-              const isShikakai = product.slug.includes("shikakai");
+            {products.map((prod) => {
+              const qty = cartQuantities[prod.id] || 0;
+              const isSelected = qty > 0;
+              const isShikakai = prod.slug.includes("shikakai");
 
               return (
                 <div
-                  key={product.id}
-                  className={`p-4 rounded-xl border transition-all flex items-center justify-between gap-4 ${
-                    qty > 0
-                      ? "bg-[#101512] border-[#D4AF37]"
-                      : "bg-[#0A0A0A]/60 border-[#1F6E4A]/30 hover:border-[#D4AF37]/40"
+                  key={prod.id}
+                  className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    isSelected
+                      ? "bg-[#0B3D2E]/40 border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.25)]"
+                      : "bg-[#101512] border-[#1F6E4A]/30 opacity-80"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-[#0B3D2E] border border-[#D4AF37]/30 flex items-center justify-center font-sans text-[#D4AF37] font-bold text-xs shrink-0">
-                      {product.sizeLabel}
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-[#0A0A0A] border border-[#1F6E4A]/40 overflow-hidden shrink-0">
+                      <img
+                        src={isShikakai ? "/product-shikakai.png" : "/product-oil.png"}
+                        alt={prod.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-serif text-sm font-bold text-[#F5F3EC]">
-                          {product.name}
-                        </h4>
-                        {isShikakai && (
-                          <span className="text-[9px] font-sans font-semibold text-[#2FA36B] bg-[#0B3D2E] px-1.5 py-0.5 rounded border border-[#2FA36B]/30 flex items-center gap-1">
-                            <Gift className="w-2.5 h-2.5 text-[#D4AF37]" /> + Free Oil
-                          </span>
-                        )}
+                        <span className="text-xs font-mono font-bold text-[#D4AF37] uppercase bg-[#0A0A0A] px-2 py-0.5 rounded border border-[#D4AF37]/30">
+                          {prod.sizeLabel}
+                        </span>
+                        <h3 className="font-serif text-base font-bold text-[#F5F3EC]">
+                          {prod.name}
+                        </h3>
                       </div>
-                      <span className="font-sans text-xs font-bold text-[#F0D687]">
-                        {formatPrice(product.price)}
+                      <p className="text-xs text-[#8A8F8C] mt-1 line-clamp-1">
+                        {prod.description}
+                      </p>
+                      <span className="font-sans text-sm font-bold text-[#F0D687] block mt-1">
+                        {formatPrice(prod.price)}
                       </span>
                     </div>
                   </div>
 
-                  {/* Quantity Counter */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => updateQuantity(product.id, -1)}
-                      className="w-8 h-8 rounded-full bg-[#101512] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0A0A] transition-colors cursor-pointer"
-                    >
-                      <Minus className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="font-mono text-sm font-bold text-[#F5F3EC] w-5 text-center">
-                      {qty}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => updateQuantity(product.id, 1)}
-                      className="w-8 h-8 rounded-full bg-[#101512] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0A0A] transition-colors cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
+                  {/* Quantity Stepper */}
+                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                    {qty === 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(prod.id, 1)}
+                        className="btn-gold-foil px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider cursor-pointer shadow"
+                      >
+                        + Add Pack
+                      </button>
+                    ) : (
+                      <div className="flex items-center bg-[#0A0A0A] border border-[#D4AF37] rounded-full p-1 shadow">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(prod.id, -1)}
+                          className="w-7 h-7 rounded-full bg-[#101512] text-[#F5F3EC] flex items-center justify-center hover:bg-[#0B3D2E] transition-colors cursor-pointer"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="w-8 text-center font-mono text-sm font-bold text-[#F0D687]">
+                          {qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(prod.id, 1)}
+                          className="w-7 h-7 rounded-full bg-[#0B3D2E] text-[#D4AF37] flex items-center justify-center hover:bg-[#2FA36B] hover:text-[#0A0A0A] transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -225,159 +302,150 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
         <div className="gold-glow-card rounded-2xl p-6 sm:p-8 space-y-6">
           <div className="border-b border-[#1F6E4A]/40 pb-4">
             <h2 className="font-serif text-xl font-bold text-[#F5F3EC]">
-              2. Delivery Address & Contact
+              2. Delivery Address
             </h2>
             <p className="text-xs text-[#8A8F8C] mt-0.5">
-              Enter your shipping details for Cash on Delivery dispatch.
+              Enter your exact contact & shipping details for Cash on Delivery dispatch.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Full Name */}
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-mono text-[#F5F3EC]/80 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#D4AF37]" /> Full Name *
-              </label>
-              <input
-                {...register("name")}
-                placeholder="e.g. Ananya R. Sharma"
-                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-sm text-[#F5F3EC] outline-none transition-colors"
-              />
-              {errors.name && (
-                <p className="text-[11px] text-red-400 font-mono">{errors.name.message}</p>
-              )}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-mono text-[#F5F3EC]/80 block mb-1.5">
+                  Full Name *
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-[#8A8F8C] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    {...register("name")}
+                    type="text"
+                    placeholder="e.g. Ananya Sharma"
+                    className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl pl-10 pr-4 py-3 text-xs text-[#F5F3EC] outline-none"
+                  />
+                </div>
+                {errors.name && (
+                  <span className="text-[11px] text-red-400 mt-1 block">
+                    {errors.name.message}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-mono text-[#F5F3EC]/80 block mb-1.5">
+                  Mobile Number (for COD Delivery) *
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-[#8A8F8C] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    {...register("phone")}
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl pl-10 pr-4 py-3 text-xs text-[#F5F3EC] outline-none"
+                  />
+                </div>
+                {errors.phone && (
+                  <span className="text-[11px] text-red-400 mt-1 block">
+                    {errors.phone.message}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Phone Number */}
-            <div className="space-y-1">
-              <label className="text-xs font-mono text-[#F5F3EC]/80 flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-[#D4AF37]" /> Phone Number *
+            <div>
+              <label className="text-xs font-mono text-[#F5F3EC]/80 block mb-1.5">
+                Email Address (Optional)
               </label>
-              <input
-                {...register("phone")}
-                placeholder="10-digit mobile number"
-                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-sm text-[#F5F3EC] outline-none transition-colors"
-              />
-              {errors.phone && (
-                <p className="text-[11px] text-red-400 font-mono">{errors.phone.message}</p>
-              )}
+              <div className="relative">
+                <Mail className="w-4 h-4 text-[#8A8F8C] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  {...register("email")}
+                  type="email"
+                  placeholder="e.g. ananya@example.com"
+                  className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl pl-10 pr-4 py-3 text-xs text-[#F5F3EC] outline-none"
+                />
+              </div>
             </div>
 
-            {/* Email Address (Optional) */}
-            <div className="space-y-1">
-              <label className="text-xs font-mono text-[#F5F3EC]/80 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-[#D4AF37]" /> Email (Optional)
+            <div>
+              <label className="text-xs font-mono text-[#F5F3EC]/80 block mb-1.5">
+                House No, Street, Landmark *
               </label>
-              <input
-                {...register("email")}
-                placeholder="For order tracking updates"
-                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-sm text-[#F5F3EC] outline-none transition-colors"
-              />
-              {errors.email && (
-                <p className="text-[11px] text-red-400 font-mono">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Address Line 1 */}
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-mono text-[#F5F3EC]/80 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" /> House No. / Street Address *
-              </label>
-              <input
-                {...register("addressLine1")}
-                placeholder="Flat / Building name, street name"
-                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-sm text-[#F5F3EC] outline-none transition-colors"
-              />
+              <div className="relative">
+                <MapPin className="w-4 h-4 text-[#8A8F8C] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  {...register("addressLine1")}
+                  type="text"
+                  placeholder="Flat No 4B, Lotus Apartments, MG Road"
+                  className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl pl-10 pr-4 py-3 text-xs text-[#F5F3EC] outline-none"
+                />
+              </div>
               {errors.addressLine1 && (
-                <p className="text-[11px] text-red-400 font-mono">
+                <span className="text-[11px] text-red-400 mt-1 block">
                   {errors.addressLine1.message}
-                </p>
+                </span>
               )}
             </div>
 
-            {/* Address Line 2 */}
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-mono text-[#F5F3EC]/80">
-                Landmark / Area (Optional)
-              </label>
-              <input
-                {...register("addressLine2")}
-                placeholder="Near landmark or locality"
-                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-sm text-[#F5F3EC] outline-none transition-colors"
-              />
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs font-mono text-[#F5F3EC]/80 block mb-1.5">City *</label>
+                <input
+                  {...register("city")}
+                  type="text"
+                  placeholder="e.g. Chennai"
+                  className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-xs text-[#F5F3EC] outline-none"
+                />
+                {errors.city && (
+                  <span className="text-[11px] text-red-400 mt-1 block">
+                    {errors.city.message}
+                  </span>
+                )}
+              </div>
 
-            {/* City */}
-            <div className="space-y-1">
-              <label className="text-xs font-mono text-[#F5F3EC]/80">City *</label>
-              <input
-                {...register("city")}
-                placeholder="e.g. Chennai"
-                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-sm text-[#F5F3EC] outline-none transition-colors"
-              />
-              {errors.city && (
-                <p className="text-[11px] text-red-400 font-mono">{errors.city.message}</p>
-              )}
-            </div>
+              <div>
+                <label className="text-xs font-mono text-[#F5F3EC]/80 block mb-1.5">State *</label>
+                <input
+                  {...register("state")}
+                  type="text"
+                  placeholder="e.g. Tamil Nadu"
+                  className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-xs text-[#F5F3EC] outline-none"
+                />
+                {errors.state && (
+                  <span className="text-[11px] text-red-400 mt-1 block">
+                    {errors.state.message}
+                  </span>
+                )}
+              </div>
 
-            {/* State */}
-            <div className="space-y-1">
-              <label className="text-xs font-mono text-[#F5F3EC]/80">State *</label>
-              <input
-                {...register("state")}
-                placeholder="e.g. Tamil Nadu"
-                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-sm text-[#F5F3EC] outline-none transition-colors"
-              />
-              {errors.state && (
-                <p className="text-[11px] text-red-400 font-mono">{errors.state.message}</p>
-              )}
-            </div>
-
-            {/* PIN Code */}
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-mono text-[#F5F3EC]/80">PIN Code (6 Digits) *</label>
-              <input
-                {...register("pincode")}
-                placeholder="e.g. 600001"
-                maxLength={6}
-                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-sm text-[#F5F3EC] outline-none transition-colors"
-              />
-              {errors.pincode && (
-                <p className="text-[11px] text-red-400 font-mono">{errors.pincode.message}</p>
-              )}
+              <div>
+                <label className="text-xs font-mono text-[#F5F3EC]/80 block mb-1.5">PIN Code *</label>
+                <input
+                  {...register("pincode")}
+                  type="text"
+                  placeholder="e.g. 600001"
+                  className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-xs text-[#F5F3EC] outline-none"
+                />
+                {errors.pincode && (
+                  <span className="text-[11px] text-red-400 mt-1 block">
+                    {errors.pincode.message}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right Column: Order Summary & Checkout Action */}
+      {/* Right Column: Interactive Promo Code & Order Summary */}
       <div className="lg:col-span-5 space-y-6">
         <div className="gold-glow-card rounded-2xl p-6 sm:p-8 space-y-6 sticky top-28">
-          <h3 className="font-serif text-xl font-bold text-[#F5F3EC] border-b border-[#1F6E4A]/40 pb-4">
-            Order Summary
-          </h3>
+          <h2 className="font-serif text-xl font-bold text-[#F5F3EC] border-b border-[#1F6E4A]/40 pb-4">
+            Order Summary & Offer
+          </h2>
 
-          {/* Active Promo Badges */}
-          <div className="space-y-3">
-            {hasShikakaiSelected ? (
-              <div className="p-3.5 rounded-xl bg-[#0B3D2E]/80 border border-[#D4AF37]/50 flex items-center gap-3">
-                <Gift className="w-5 h-5 text-[#D4AF37] shrink-0" />
-                <div className="text-xs">
-                  <span className="font-mono font-bold text-[#F0D687] block uppercase">
-                    PROMO GIFT APPLIED
-                  </span>
-                  <span className="text-[#F5F3EC]/90">
-                    Free 20ml Herbal Hair Oil Elixir added!
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3 rounded-xl bg-[#101512] border border-[#1F6E4A]/30 text-xs text-[#8A8F8C] flex items-center gap-2">
-                <Gift className="w-4 h-4 text-[#D4AF37]" />
-                <span>Add any Shikakai pack to get a FREE 20ml Oil Elixir!</span>
-              </div>
-            )}
-
+          {/* Shipping Badge Callout */}
+          <div>
             {qualifiesForFreeShipping ? (
               <div className="p-3 rounded-xl bg-[#0B3D2E]/50 border border-[#2FA36B]/40 flex items-center gap-2 text-xs text-[#2FA36B]">
                 <Truck className="w-4 h-4" />
@@ -391,8 +459,73 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
             )}
           </div>
 
+          {/* INTERACTIVE PROMO CODE SECTION (Configured by Admin) */}
+          <div className="space-y-3 pt-2 border-t border-[#1F6E4A]/30">
+            <label className="text-xs font-serif font-bold text-[#F0D687] flex items-center gap-1.5">
+              <Tag className="w-4 h-4 text-[#D4AF37]" /> Have a Promo Code?
+            </label>
+
+            {/* Admin Suggested Promotion Offer Card */}
+            {activePromo && activePromo.active === "true" && !appliedPromo && (
+              <div className="p-3.5 rounded-2xl bg-[#0B3D2E]/40 border border-[#D4AF37]/40 space-y-2 text-xs font-sans">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#F0D687]">{activePromo.headline}</span>
+                  <span className="text-[10px] font-mono font-bold text-[#2FA36B] bg-[#0B3D2E] px-2 py-0.5 rounded border border-[#2FA36B]/40">
+                    {activePromo.discountPercent}% DISCOUNT
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#8A8F8C]">{activePromo.description}</p>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs font-mono text-[#F5F3EC]">
+                    Use Code: <strong className="text-[#D4AF37]">{activePromo.code}</strong>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPromoCode(activePromo.code)}
+                    className="px-3 py-1 rounded-full bg-[#D4AF37] text-[#0A0A0A] font-bold text-[11px] uppercase tracking-wider hover:brightness-110 cursor-pointer shadow-md transition-all"
+                  >
+                    APPLY CODE
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Manual Code Input Form */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={inputPromoCode}
+                onChange={(e) => setInputPromoCode(e.target.value)}
+                placeholder="Enter Promo Code e.g. AYURV10"
+                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-3 py-2.5 text-xs text-[#F5F3EC] font-mono outline-none uppercase tracking-wider"
+              />
+              <button
+                type="button"
+                onClick={() => handleApplyPromoCode(inputPromoCode)}
+                className="px-4 py-2.5 rounded-xl bg-[#101512] border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0A0A] transition-colors text-xs font-bold uppercase shrink-0 cursor-pointer"
+              >
+                Apply
+              </button>
+            </div>
+
+            {/* Error or Success Alerts */}
+            {promoError && (
+              <p className="text-[11px] text-red-400 font-sans flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> {promoError}
+              </p>
+            )}
+
+            {promoSuccessMsg && (
+              <p className="text-[11px] text-[#2FA36B] font-sans font-bold flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> {promoSuccessMsg}
+              </p>
+            )}
+          </div>
+
           {/* Line Items List */}
-          <div className="space-y-3 pt-2 text-xs font-mono border-t border-[#1F6E4A]/30">
+          <div className="space-y-3 pt-2 text-xs font-sans border-t border-[#1F6E4A]/30">
             {selectedItems.map((item) => {
               const prod = products.find((p) => p.id === item.productId);
               if (!prod) return null;
@@ -424,9 +557,17 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
               <span>{qualifiesForFreeShipping ? "FREE" : "₹50"}</span>
             </div>
 
+            {/* Promo Discount Deduction Line */}
+            {appliedPromo && (
+              <div className="flex justify-between items-center text-[#2FA36B] pt-1 font-bold">
+                <span>Promo Discount ({appliedPromo.code} - {appliedPromo.discountPercent}% OFF):</span>
+                <span>- {formatPrice(discountAmount)}</span>
+              </div>
+            )}
+
             <div className="flex justify-between items-baseline pt-4 border-t border-[#D4AF37]/30 text-sm">
-              <span className="font-sans font-semibold text-[#F5F3EC]">Total Amount:</span>
-              <span className="font-sans text-2xl font-bold text-[#F0D687]">
+              <span className="font-serif font-bold text-[#F5F3EC]">Grand Total (COD):</span>
+              <span className="font-sans text-2xl font-bold text-gold-shine">
                 {formatPrice(grandTotal)}
               </span>
             </div>
@@ -462,7 +603,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
           <button
             type="submit"
             disabled={submitting || selectedItems.length === 0}
-            className="w-full btn-gold-foil py-4 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.3)] disabled:opacity-50 cursor-pointer"
+            className="w-full btn-gold-foil py-4 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.3)] disabled:opacity-50 cursor-pointer font-sans"
           >
             {submitting ? (
               <>
@@ -477,7 +618,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
             )}
           </button>
 
-          <div className="text-center text-[10px] text-[#8A8F8C] space-y-1 font-mono">
+          <div className="text-center text-[10px] text-[#8A8F8C] space-y-1 font-sans">
             <p className="flex items-center justify-center gap-1">
               <Lock className="w-3 h-3 text-[#D4AF37]" /> 256-bit Encrypted Checkout • COD Pan-India
             </p>
