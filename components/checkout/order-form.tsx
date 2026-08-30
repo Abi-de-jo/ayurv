@@ -40,14 +40,17 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccessMsg, setPromoSuccessMsg] = useState<string | null>(null);
 
+  const [isPromoAlreadyClaimed, setIsPromoAlreadyClaimed] = useState(false);
+
   useEffect(() => {
-    const customerKey = typeof window !== "undefined" ? localStorage.getItem("ayurvya_customer_id") || "" : "";
+    const customerKey = getOrCreateCustomerKey();
     fetch(`/api/promotion?customerKey=${encodeURIComponent(customerKey)}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.promo && data.promo.active === "true") {
           setActivePromo(data.promo);
           if (data.alreadyUsed) {
+            setIsPromoAlreadyClaimed(true);
             setAppliedPromo(null);
             setPromoError(null);
           }
@@ -471,70 +474,72 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
             )}
           </div>
 
-          {/* INTERACTIVE PROMO CODE SECTION (Configured by Admin) */}
-          <div className="space-y-3 pt-2 border-t border-[#1F6E4A]/30">
-            <label className="text-xs font-serif font-bold text-[#F0D687] flex items-center gap-1.5">
-              <Tag className="w-4 h-4 text-[#D4AF37]" /> Have a Promo Code?
-            </label>
+          {/* INTERACTIVE PROMO CODE SECTION (Hidden if already claimed in DB) */}
+          {!isPromoAlreadyClaimed && (
+            <div className="space-y-3 pt-2 border-t border-[#1F6E4A]/30">
+              <label className="text-xs font-serif font-bold text-[#F0D687] flex items-center gap-1.5">
+                <Tag className="w-4 h-4 text-[#D4AF37]" /> Have a Promo Code?
+              </label>
 
-            {/* Admin Suggested Promotion Offer Card */}
-            {activePromo && activePromo.active === "true" && !appliedPromo && (
-              <div className="p-3.5 rounded-2xl bg-[#0B3D2E]/40 border border-[#D4AF37]/40 space-y-2 text-xs font-sans">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#F0D687]">{activePromo.headline}</span>
-                  <span className="text-[10px] font-mono font-bold text-[#2FA36B] bg-[#0B3D2E] px-2 py-0.5 rounded border border-[#2FA36B]/40">
-                    {activePromo.discountPercent}% DISCOUNT
-                  </span>
+              {/* Admin Suggested Promotion Offer Card */}
+              {activePromo && activePromo.active === "true" && !appliedPromo && (
+                <div className="p-3.5 rounded-2xl bg-[#0B3D2E]/40 border border-[#D4AF37]/40 space-y-2 text-xs font-sans">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[#F0D687]">{activePromo.headline}</span>
+                    <span className="text-[10px] font-mono font-bold text-[#2FA36B] bg-[#0B3D2E] px-2 py-0.5 rounded border border-[#2FA36B]/40">
+                      {activePromo.discountPercent}% DISCOUNT
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#8A8F8C]">{activePromo.description}</p>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-xs font-mono text-[#F5F3EC]">
+                      Use Code: <strong className="text-[#D4AF37]">{activePromo.code}</strong>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPromoCode(activePromo.code)}
+                      className="px-3 py-1 rounded-full bg-[#D4AF37] text-[#0A0A0A] font-bold text-[11px] uppercase tracking-wider hover:brightness-110 cursor-pointer shadow-md transition-all"
+                    >
+                      APPLY CODE
+                    </button>
+                  </div>
                 </div>
-                <p className="text-[11px] text-[#8A8F8C]">{activePromo.description}</p>
+              )}
 
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-mono text-[#F5F3EC]">
-                    Use Code: <strong className="text-[#D4AF37]">{activePromo.code}</strong>
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => handleApplyPromoCode(activePromo.code)}
-                    className="px-3 py-1 rounded-full bg-[#D4AF37] text-[#0A0A0A] font-bold text-[11px] uppercase tracking-wider hover:brightness-110 cursor-pointer shadow-md transition-all"
-                  >
-                    APPLY CODE
-                  </button>
-                </div>
+              {/* Manual Code Input Form */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={inputPromoCode}
+                  onChange={(e) => setInputPromoCode(e.target.value)}
+                  placeholder="Enter Promo Code e.g. AYURV10"
+                  className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-3 py-2.5 text-xs text-[#F5F3EC] font-mono outline-none uppercase tracking-wider"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleApplyPromoCode(inputPromoCode)}
+                  className="px-4 py-2.5 rounded-xl bg-[#101512] border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0A0A] transition-colors text-xs font-bold uppercase shrink-0 cursor-pointer"
+                >
+                  Apply
+                </button>
               </div>
-            )}
 
-            {/* Manual Code Input Form */}
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={inputPromoCode}
-                onChange={(e) => setInputPromoCode(e.target.value)}
-                placeholder="Enter Promo Code e.g. AYURV10"
-                className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/50 focus:border-[#D4AF37] rounded-xl px-3 py-2.5 text-xs text-[#F5F3EC] font-mono outline-none uppercase tracking-wider"
-              />
-              <button
-                type="button"
-                onClick={() => handleApplyPromoCode(inputPromoCode)}
-                className="px-4 py-2.5 rounded-xl bg-[#101512] border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0A0A] transition-colors text-xs font-bold uppercase shrink-0 cursor-pointer"
-              >
-                Apply
-              </button>
+              {/* Error or Success Alerts */}
+              {promoError && (
+                <p className="text-[11px] text-red-400 font-sans flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" /> {promoError}
+                </p>
+              )}
+
+              {promoSuccessMsg && (
+                <p className="text-[11px] text-[#2FA36B] font-sans font-bold flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> {promoSuccessMsg}
+                </p>
+              )}
             </div>
-
-            {/* Error or Success Alerts */}
-            {promoError && (
-              <p className="text-[11px] text-red-400 font-sans flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> {promoError}
-              </p>
-            )}
-
-            {promoSuccessMsg && (
-              <p className="text-[11px] text-[#2FA36B] font-sans font-bold flex items-center gap-1">
-                <Check className="w-3.5 h-3.5" /> {promoSuccessMsg}
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Line Items List */}
           <div className="space-y-3 pt-2 text-xs font-sans border-t border-[#1F6E4A]/30">

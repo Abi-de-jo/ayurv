@@ -6,14 +6,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Gift, X, ArrowRight, Tag, Check } from "lucide-react";
 import confetti from "canvas-confetti";
 
+import { getOrCreateCustomerKey } from "@/lib/customer";
+
 export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPromo, setCurrentPromo] = useState<any>(promotion || null);
   const [isAlreadyClaimed, setIsAlreadyClaimed] = useState(false);
 
   const fetchLivePromo = async () => {
+    if (typeof window !== "undefined" && localStorage.getItem("ayurvya_promo_claimed") === "true") {
+      setIsAlreadyClaimed(true);
+      return;
+    }
     try {
-      const customerKey = typeof window !== "undefined" ? localStorage.getItem("ayurvya_customer_id") || "" : "";
+      const customerKey = getOrCreateCustomerKey();
       const res = await fetch(`/api/promotion?customerKey=${encodeURIComponent(customerKey)}`);
       if (res.ok) {
         const data = await res.json();
@@ -174,7 +180,12 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
               <div className="space-y-3">
                 <Link
                   href="/checkout"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem("ayurvya_promo_claimed", "true");
+                    }
+                    setIsOpen(false);
+                  }}
                   className="btn-gold-foil w-full py-3.5 rounded-full text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-105 transition-transform"
                 >
                   <span>{isAlreadyClaimed ? "Proceed to Checkout" : "Claim Offer & Order Now"}</span>

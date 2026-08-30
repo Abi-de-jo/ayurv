@@ -402,20 +402,6 @@ export async function getOrderById(orderIdOrCode?: string) {
     }
   }
 
-  // Check inMemoryOrders cache
-  for (const val of inMemoryOrders.values()) {
-    const cleanId = (val.id || "").replace(/[\s\-_]/g, "").toUpperCase();
-    const cleanCode = (val.trackingCode || "").replace(/[\s\-_]/g, "").toUpperCase();
-    if (
-      val.id === raw ||
-      val.trackingCode === raw ||
-      cleanId === cleaned ||
-      cleanCode === cleaned
-    ) {
-      return val;
-    }
-  }
-
   return null;
 }
 
@@ -477,13 +463,7 @@ export async function getOrdersByCustomerId(customerKeyOrId: string) {
     }
   }
 
-  const matches = [];
-  for (const val of inMemoryOrders.values()) {
-    if (val.customer?.id === customerKeyOrId) {
-      matches.push(val);
-    }
-  }
-  return matches;
+  return [];
 }
 
 export async function getAllOrdersAdmin() {
@@ -530,15 +510,13 @@ export async function getAllOrdersAdmin() {
         });
       }
 
-      if (result.length > 0) {
-        return result;
-      }
+      return result;
     } catch (e) {
       console.warn("Neon DB getAllOrdersAdmin Error:", e);
     }
   }
 
-  return Array.from(inMemoryOrders.values());
+  return [];
 }
 
 export async function updateOrderStatusAdmin(
