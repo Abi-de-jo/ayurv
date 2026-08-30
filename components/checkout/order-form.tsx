@@ -41,11 +41,16 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
   const [promoSuccessMsg, setPromoSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/promotion")
+    const customerKey = typeof window !== "undefined" ? localStorage.getItem("ayurvya_customer_id") || "" : "";
+    fetch(`/api/promotion?customerKey=${encodeURIComponent(customerKey)}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.promo && data.promo.active === "true") {
           setActivePromo(data.promo);
+          if (data.alreadyUsed) {
+            setAppliedPromo(null);
+            setPromoError(null);
+          }
         }
       })
       .catch((err) => console.warn("Failed to fetch promo in checkout:", err));

@@ -42,6 +42,7 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
   }, []);
 
   if (currentPromo && currentPromo.active === "false") return null;
+  if (isAlreadyClaimed) return null;
 
   const headlineText = currentPromo?.headline || "Free 20ml Herbal Hair Oil Elixir";
   const descText =
