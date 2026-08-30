@@ -131,7 +131,7 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
                 Special promotion automatically applied to your checkout session today.
               </p>
 
-              <div className="bg-[#0B3D2E]/40 border border-[#D4AF37]/35 rounded-2xl p-4 mb-6 text-left relative overflow-hidden shadow-inner">
+              <div className="bg-[#0B3D2E]/40 border border-[#D4AF37]/35 rounded-2xl p-4 mb-6 text-left relative overflow-hidden shadow-inner space-y-2">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/20 border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] shrink-0 mt-0.5">
                     <Tag className="w-4 h-4" />
@@ -144,6 +144,13 @@ export default function FloatingGiftModal({ promotion }: { promotion?: any }) {
                       {descText}
                     </p>
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-[#1F6E4A]/30 text-xs font-sans">
+                  <span className="text-[#8A8F8C]">Use Code at Checkout:</span>
+                  <span className="font-mono font-bold text-[#F0D687] bg-[#0A0A0A] px-2.5 py-0.5 rounded border border-[#D4AF37]/40 tracking-wider">
+                    {currentPromo?.code || "AYURV10"} ({currentPromo?.discountPercent || 10}% OFF)
+                  </span>
                 </div>
               </div>
 

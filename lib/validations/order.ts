@@ -22,6 +22,8 @@ export const checkoutFormSchema = z.object({
     .regex(/^[0-9]{6}$/, "Invalid PIN code format"),
   paymentMethod: z.enum(["cod", "prepaid"]),
   items: z.array(orderItemSchema).min(1, "Your order must contain at least 1 item"),
+  appliedPromoCode: z.string().optional(),
+  discountAmount: z.string().optional(),
 });
 
 export type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
