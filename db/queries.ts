@@ -1,5 +1,5 @@
 import { db, schema } from "./index";
-import { eq, desc } from "drizzle-orm";
+import { sql, eq, desc } from "drizzle-orm";
 import { CheckoutFormValues } from "@/lib/validations/order";
 import {
   saveOrderPersistent,
@@ -10,6 +10,19 @@ import {
   getPromotionPersistent,
   savePromotionPersistent,
 } from "./storage";
+
+let columnsEnsured = false;
+async function ensureDbColumns() {
+  if (!db || columnsEnsured) return;
+  try {
+    await db.execute(sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_code text;`);
+    await db.execute(sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS code text DEFAULT 'AYURV10';`);
+    await db.execute(sql`ALTER TABLE promotions ADD COLUMN IF NOT EXISTS discount_percent integer DEFAULT 10;`);
+    columnsEnsured = true;
+  } catch (e) {
+    // Suppress if DDL already exists
+  }
+}
 
 export interface StaticProduct {
   id: string;
@@ -245,6 +258,7 @@ export async function processOrderCreation(
   };
 
   if (db) {
+    await ensureDbColumns();
     try {
       // 1. Ensure products exist in DB first so foreign key constraints on orderItems succeed
       const dbProds = await db.select().from(schema.products);
@@ -281,62 +295,43 @@ export async function processOrderCreation(
         });
       }
 
-        // 3. Insert order with fallback for older table schemas
-      try {
-        await db.insert(schema.orders).values({
-          id: orderId,
-          trackingCode: trackingCode,
-          customerId: customerId,
-          totalAmount: grandTotal.toFixed(2),
-          shippingFee: shippingFee.toFixed(2),
-          paymentMethod: formValues.paymentMethod as any,
-          status: "confirmed",
-        });
-      } catch (errOrders) {
-        try {
-          await db.insert(schema.orders).values({
-            id: orderId,
-            customerId: customerId,
-            totalAmount: grandTotal.toFixed(2),
-            shippingFee: shippingFee.toFixed(2),
-            paymentMethod: formValues.paymentMethod as any,
-            status: "confirmed",
-          } as any);
-        } catch (e2) {
-          console.warn("Neon DB Orders Insert Error:", e2);
-        }
-      }
+      // 3. Insert order directly into Neon DB
+      await db.insert(schema.orders).values({
+        id: orderId,
+        trackingCode: trackingCode,
+        customerId: customerId,
+        totalAmount: grandTotal.toFixed(2),
+        shippingFee: shippingFee.toFixed(2),
+        paymentMethod: formValues.paymentMethod as any,
+        status: "confirmed",
+      });
 
-      // 4. Insert order items (ensuring foreign key product exists in DB)
+      // 4. Insert order items directly into Neon DB
       for (const item of itemDetails) {
-        try {
-          const existingProd = await db.select().from(schema.products).where(eq(schema.products.id, item.product.id));
-          if (existingProd.length === 0) {
-            await db.insert(schema.products).values({
-              id: item.product.id,
-              slug: item.product.slug,
-              name: item.product.name,
-              sizeLabel: item.product.sizeLabel,
-              price: item.product.price,
-              description: item.product.description,
-              ingredients: item.product.ingredients,
-              usage: item.product.usage,
-              image: item.product.image,
-              stock: item.product.stock,
-            });
-          }
-
-          await db.insert(schema.orderItems).values({
-            id: crypto.randomUUID(),
-            orderId: orderId,
-            productId: item.product.id,
-            quantity: item.quantity,
-            unitPrice: String(item.unitPrice),
-            isFreeGift: String(item.isFreeGift),
+        const existingProd = await db.select().from(schema.products).where(eq(schema.products.id, item.product.id));
+        if (existingProd.length === 0) {
+          await db.insert(schema.products).values({
+            id: item.product.id,
+            slug: item.product.slug,
+            name: item.product.name,
+            sizeLabel: item.product.sizeLabel,
+            price: item.product.price,
+            description: item.product.description,
+            ingredients: item.product.ingredients,
+            usage: item.product.usage,
+            image: item.product.image,
+            stock: item.product.stock,
           });
-        } catch (errItem) {
-          console.warn("Neon DB OrderItem Insert Error:", errItem);
         }
+
+        await db.insert(schema.orderItems).values({
+          id: crypto.randomUUID(),
+          orderId: orderId,
+          productId: item.product.id,
+          quantity: item.quantity,
+          unitPrice: String(item.unitPrice),
+          isFreeGift: String(item.isFreeGift),
+        });
       }
     } catch (e) {
       console.warn("Neon DB Order Creation Error:", e);
