@@ -145,7 +145,10 @@ export async function getActivePromotion() {
   return getPromotionPersistent();
 }
 
-export async function processOrderCreation(formValues: CheckoutFormValues) {
+export async function processOrderCreation(
+  formValues: CheckoutFormValues,
+  existingCustomerId?: string
+) {
   const allProducts = await getProducts();
 
   const itemDetails: Array<{
@@ -202,7 +205,7 @@ export async function processOrderCreation(formValues: CheckoutFormValues) {
 
   const orderId = crypto.randomUUID();
   const trackingCode = generateTrackingCode();
-  const customerId = crypto.randomUUID();
+  const customerId = existingCustomerId || crypto.randomUUID();
 
   const newOrderSummary = {
     id: orderId,

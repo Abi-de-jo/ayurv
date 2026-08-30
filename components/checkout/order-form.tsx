@@ -26,6 +26,8 @@ import {
   Lock,
 } from "lucide-react";
 
+import { getOrCreateCustomerKey } from "@/lib/customer";
+
 export default function OrderForm({ products }: { products: StaticProduct[] }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -109,11 +111,15 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
     };
 
     try {
-      const res = await createOrder(submissionPayload);
+      const customerKey = getOrCreateCustomerKey();
+      const res = await createOrder(submissionPayload, customerKey);
       if (res.success && res.orderId) {
         if (res.trackingCode) {
           localStorage.setItem("ayurvya_last_order_code", res.trackingCode);
           localStorage.setItem("ayurvya_last_order_id", res.orderId);
+        }
+        if (res.customerId) {
+          localStorage.setItem("ayurvya_customer_id", res.customerId);
         }
         // Trigger celebration confetti
         confetti({
