@@ -12,6 +12,14 @@ import {
   StaticProduct,
 } from "@/db/queries";
 
+export async function verifyAdminPinAction(enteredPin: string) {
+  const targetPin = process.env.ADMIN_PIN || process.env.NEXT_PUBLIC_ADMIN_PIN || "priya123";
+  if (enteredPin && enteredPin.trim() === targetPin.trim()) {
+    return { success: true };
+  }
+  return { success: false, error: "Invalid Admin Password." };
+}
+
 export async function getAdminOrdersAction() {
   try {
     const orders = await getAllOrdersAdmin();

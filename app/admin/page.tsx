@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
+  verifyAdminPinAction,
   getAdminOrdersAction,
   updateOrderStatusAction,
   deleteOrderAction,
@@ -67,13 +68,18 @@ export default function AdminDashboardPage() {
   const [promoSaving, setPromoSaving] = useState(false);
   const [promoSaved, setPromoSaved] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [authenticating, setAuthenticating] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin === "1234" || pin === "admin123" || pin === "admin") {
+    setAuthenticating(true);
+    const res = await verifyAdminPinAction(pin);
+    setAuthenticating(false);
+    if (res.success) {
       setIsAuthenticated(true);
       fetchDashboardData();
     } else {
-      alert("Invalid Admin PIN. (Default PIN: 1234 or admin123)");
+      alert("Invalid Admin Password. Access Denied.");
     }
   };
 
@@ -214,7 +220,7 @@ export default function AdminDashboardPage() {
               type="password"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              placeholder="Enter Admin PIN (Default: 1234)"
+              placeholder="Enter Admin Password"
               className="w-full bg-[#0A0A0A] border border-[#1F6E4A]/60 focus:border-[#D4AF37] rounded-xl px-4 py-3 text-center text-sm text-[#F5F3EC] tracking-widest outline-none font-mono"
             />
 
