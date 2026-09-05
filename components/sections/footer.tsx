@@ -148,11 +148,11 @@ export default function Footer() {
               </div>
               <div className="flex items-start gap-2.5">
                 <Truck className="w-4 h-4 text-[#2FA36B] shrink-0 mt-0.5" />
-                <span>Free Express Shipping on Orders of 2+ Items</span>
+                <span>Free shipping on orders above 1000/-</span>
               </div>
               <div className="flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
-                <span>Cash on Delivery (COD) Available Pan-India</span>
+                <span>Express Pan-India Doorstep Dispatch</span>
               </div>
             </div>
           </div>

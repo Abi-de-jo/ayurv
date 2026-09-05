@@ -5,7 +5,7 @@ import { getProductBySlug, getProducts } from "@/db/queries";
 import { formatPrice } from "@/lib/utils";
 import { BotanicalDivider } from "@/components/brand/botanical-divider";
 import { ShikakaiPouchIcon, HairOilBottleIcon } from "@/components/brand/icons";
-import { ShoppingBag, ArrowLeft, Gift, ShieldCheck, CheckCircle2, Leaf, Clock, Award } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Gift, ShieldCheck, CheckCircle2, Leaf, Clock, Award, Truck } from "lucide-react";
 
 export async function generateStaticParams() {
   const products = await getProducts();

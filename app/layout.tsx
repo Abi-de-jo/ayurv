@@ -22,6 +22,15 @@ export const metadata: Metadata = {
   title: "Ayurvya Wellness | Where Ayurveda Meets Luxury",
   description:
     "100% authentic Ayurvedic hair care. Premium Herbal Shikakai Powder with 40+ herbs and Herbal Hair Oil Elixir. Free of sulphates, parabens, and chemicals.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   keywords: [
     "Ayurvya",
     "Ayurvedic hair care",
