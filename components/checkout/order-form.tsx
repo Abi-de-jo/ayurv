@@ -90,13 +90,13 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
     return prod && (prod.slug === "shikakai-powder-500g" || prod.slug === "shikakai-powder-250g");
   });
 
-  const qualifiesForFreeShipping = totalPaidItems >= 2;
-  const shippingFee = qualifiesForFreeShipping ? 0 : 50;
-
   const subtotal = selectedItems.reduce((acc, item) => {
     const prod = products.find((p) => p.id === item.productId);
     return acc + (prod ? parseFloat(prod.price) * item.quantity : 0);
   }, 0);
+
+  const qualifiesForFreeShipping = subtotal >= 1000;
+  const shippingFee = qualifiesForFreeShipping ? 0 : 50;
 
   // Discount calculation if promo applied
   const discountAmount = appliedPromo
@@ -165,7 +165,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
       city: "",
       state: "",
       pincode: "",
-      paymentMethod: "cod",
+      paymentMethod: "prepaid",
       items: selectedItems,
     },
   });
@@ -228,7 +228,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
                 1. Select Products
               </h2>
               <p className="text-xs text-[#8A8F8C] mt-0.5">
-                Combine 2 or more items for FREE Shipping!
+                Free shipping on orders above 1000/-!
               </p>
             </div>
           </div>
@@ -319,7 +319,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
               2. Delivery Address
             </h2>
             <p className="text-xs text-[#8A8F8C] mt-0.5">
-              Enter your exact contact & shipping details for Cash on Delivery dispatch.
+              Enter your exact contact & shipping details for order dispatch.
             </p>
           </div>
 
@@ -347,7 +347,7 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
 
               <div>
                 <label className="text-xs font-mono text-[#F5F3EC]/80 block mb-1.5">
-                  Mobile Number (for COD Delivery) *
+                  Mobile Number (for Delivery Updates) *
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-[#8A8F8C] absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -463,12 +463,12 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
             {qualifiesForFreeShipping ? (
               <div className="p-3 rounded-xl bg-[#0B3D2E]/50 border border-[#2FA36B]/40 flex items-center gap-2 text-xs text-[#2FA36B]">
                 <Truck className="w-4 h-4" />
-                <span className="font-semibold">UNLOCKED: FREE Pan-India Shipping</span>
+                <span className="font-semibold">UNLOCKED: FREE Pan-India Shipping (Orders above 1000/-)</span>
               </div>
             ) : (
               <div className="p-3 rounded-xl bg-[#101512] border border-[#1F6E4A]/30 text-xs text-[#8A8F8C] flex items-center gap-2">
                 <Truck className="w-4 h-4 text-[#D4AF37]" />
-                <span>Add {2 - totalPaidItems} more item(s) for FREE shipping!</span>
+                <span>Add {formatPrice(Math.max(0, 1000 - subtotal))} more for FREE shipping!</span>
               </div>
             )}
           </div>
@@ -582,25 +582,25 @@ export default function OrderForm({ products }: { products: StaticProduct[] }) {
             )}
 
             <div className="flex justify-between items-baseline pt-4 border-t border-[#D4AF37]/30 text-sm">
-              <span className="font-serif font-bold text-[#F5F3EC]">Grand Total (COD):</span>
+              <span className="font-serif font-bold text-[#F5F3EC]">Grand Total:</span>
               <span className="font-sans text-2xl font-bold text-gold-shine">
                 {formatPrice(grandTotal)}
               </span>
             </div>
           </div>
 
-          {/* Payment Method Selector */}
+          {/* Shipping & Delivery Guarantee */}
           <div className="space-y-3 pt-2">
-            <label className="text-xs font-mono text-[#F5F3EC]/80 block">Payment Method:</label>
+            <label className="text-xs font-mono text-[#F5F3EC]/80 block">Shipping & Delivery:</label>
             <div className="p-4 rounded-xl bg-[#0B3D2E]/40 border border-[#D4AF37] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#D4AF37]" />
+                <Truck className="w-5 h-5 text-[#D4AF37]" />
                 <div>
                   <span className="text-xs font-bold text-[#F5F3EC] block">
-                    Cash on Delivery (COD)
+                    Free shipping on orders above 1000/-
                   </span>
                   <span className="text-[10px] text-[#8A8F8C]">
-                    Pay cash upon delivery to your doorstep
+                    Insured Express Doorstep Dispatch across India
                   </span>
                 </div>
               </div>
