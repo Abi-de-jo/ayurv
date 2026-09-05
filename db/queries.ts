@@ -93,7 +93,7 @@ export const INITIAL_PROMOTION = {
   id: "d4af3700-0000-4000-8000-000000000001",
   headline: "EXCLUSIVE HERBAL OFFER",
   description:
-    "Buy any 500g or 250g Shikakai pack, get a 20ml Herbal Hair Oil Elixir FREE · Buy any 2 products for FREE Shipping!",
+    "Buy any 500g or 250g Shikakai pack, get a 20ml Herbal Hair Oil Elixir FREE · Free shipping on orders above 1000/-!",
   code: "AYURV10",
   discountPercent: 10,
   active: "true",
@@ -209,11 +209,11 @@ export async function processOrderCreation(
     });
   }
 
-  const shippingFee = totalPaidItemCount >= 2 ? 0 : 50;
-
   const itemsTotal = itemDetails.reduce((acc, item) => {
     return acc + parseFloat(item.unitPrice) * item.quantity;
   }, 0);
+
+  const shippingFee = itemsTotal >= 1000 ? 0 : 50;
 
   const promoDiscount = parseFloat(formValues.discountAmount || "0");
   const grandTotal = Math.max(0, itemsTotal + shippingFee - promoDiscount);

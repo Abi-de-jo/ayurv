@@ -477,7 +477,7 @@ export default function AdminDashboardPage() {
                         </div>
 
                         <div className="flex items-center justify-between pt-3 border-t border-[#1F6E4A]/30 font-semibold text-sm">
-                          <span>Total Amount (COD):</span>
+                          <span>Total Amount:</span>
                           <span className="font-sans font-bold text-lg text-gold-shine">
                             {formatPrice(order.totalAmount)}
                           </span>

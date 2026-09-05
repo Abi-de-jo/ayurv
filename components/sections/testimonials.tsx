@@ -28,7 +28,7 @@ const REVIEWS = [
     product: "Hair Oil Elixir + 500g Pack",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
     comment:
-      "The oil is pure magic. It cured my persistent dandruff flakes in two weeks. Order delivered promptly via COD. Amazing luxury quality!",
+      "The oil is pure magic. It cured my persistent dandruff flakes in two weeks. Order delivered promptly with Free Shipping. Amazing luxury quality!",
     rating: 5,
   },
 ];

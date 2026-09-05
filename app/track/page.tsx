@@ -247,7 +247,7 @@ export default function OrderTrackingPage() {
                 <div className="text-left sm:text-right text-xs font-sans">
                   <span className="text-[#8A8F8C] block">Payment Mode:</span>
                   <span className="text-[#2FA36B] font-bold uppercase">
-                    {order.paymentMethod === "cod" ? "Cash on Delivery (COD)" : "Prepaid"}
+                    {order.paymentMethod === "cod" ? "Direct Order" : "Prepaid"}
                   </span>
                   <span className="text-gold-shine block font-bold text-sm mt-0.5">
                     {formatPrice(order.totalAmount)}
@@ -409,7 +409,7 @@ export default function OrderTrackingPage() {
                   </div>
 
                   <div className="border-t border-[#1F6E4A]/30 pt-2 flex justify-between items-center text-sm font-bold">
-                    <span className="text-[#F5F3EC]">Grand Total Amount (COD):</span>
+                    <span className="text-[#F5F3EC]">Grand Total Amount:</span>
                     <span className="text-gold-shine text-base">{formatPrice(order.totalAmount)}</span>
                   </div>
                 </div>

@@ -45,7 +45,7 @@ export const orders = pgTable("orders", {
   customerId: uuid("customer_id").references(() => customers.id).notNull(),
   totalAmount: numeric("total_amount", { precision: 10, scale: 2 }).notNull(),
   shippingFee: numeric("shipping_fee", { precision: 10, scale: 2 }).notNull().default("0.00"),
-  paymentMethod: paymentMethodEnum("payment_method").notNull().default("cod"),
+  paymentMethod: paymentMethodEnum("payment_method").notNull().default("prepaid"),
   status: orderStatusEnum("status").notNull().default("pending"),
   courierName: text("courier_name"),
   trackingNumber: text("tracking_number"),

@@ -60,7 +60,7 @@ export default async function OrderSuccessPage({
             <div>
               <span className="text-[#8A8F8C] block text-[11px]">Payment Method:</span>
               <span className="text-[#2FA36B] font-bold uppercase text-xs">
-                {order.paymentMethod === "cod" ? "Cash on Delivery (COD)" : "Prepaid"}
+                {order.paymentMethod === "cod" ? "Direct Order" : "Prepaid"}
               </span>
             </div>
             <div>
