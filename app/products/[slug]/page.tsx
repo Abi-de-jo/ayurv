@@ -76,7 +76,7 @@ export default async function ProductDetailPage({
                   {formatPrice(product.price)}
                 </span>
                 <span className="text-xs text-[#8A8F8C] font-sans font-normal">
-                  Inclusive of all taxes & Pan-India COD
+                  Inclusive of all taxes • Free shipping on orders above 1000/-
                 </span>
               </div>
             </div>
@@ -90,7 +90,7 @@ export default async function ProductDetailPage({
                     SPECIAL LIVE PROMO APPLIED
                   </h4>
                   <p className="text-xs text-[#F5F3EC]/90 mt-0.5">
-                    Order this pack and get a <strong>20ml Hair Oil Elixir FREE</strong> automatically added to your order. Buy 2 items for <strong>FREE Shipping</strong>!
+                    Order this pack and get a <strong>20ml Hair Oil Elixir FREE</strong> automatically added to your order. Free shipping on orders above <strong>1000/-</strong>!
                   </p>
                 </div>
               </div>
@@ -138,8 +138,8 @@ export default async function ProductDetailPage({
 
             <div className="grid grid-cols-2 gap-4 text-xs text-[#8A8F8C] pt-2 border-t border-[#1F6E4A]/20">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
-                <span>Cash on Delivery Available</span>
+                <Truck className="w-4 h-4 text-[#D4AF37]" />
+                <span>Free shipping on orders above 1000/-</span>
               </div>
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-[#2FA36B]" />
