@@ -1,4 +1,4 @@
-kimport React from "react";
+import React from "react";
 import OrderForm from "@/components/checkout/order-form";
 import { getProducts } from "@/db/queries";
 import { BotanicalDivider } from "@/components/brand/botanical-divider";
